@@ -102,7 +102,7 @@ export default function Landing() {
       {/* Footer */}
       <footer style={{ borderTop: '1px solid var(--border)', padding: '2rem 1.5rem', textAlign: 'center' }}>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          © 2024 Stack Force JD — Recruiter Portal. Phase 1 MVP.
+          © 2024 TalentForce JD — Recruiter Portal. Phase 1 MVP.
         </p>
       </footer>
     </div>

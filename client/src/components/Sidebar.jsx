@@ -15,8 +15,7 @@ export default function Sidebar() {
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: Home },
-    { name: 'Search', path: '/search', icon: Search, badge: 'STACKY' },
-    { name: 'Projects', path: '/projects', icon: LayoutGrid, activeCheck: '/projects' }, // Adjusting to match screenshot order and names
+    { name: 'Projects', path: '/projects', icon: LayoutGrid, activeCheck: '/projects' },
     { name: 'Chat History', path: '/chat', icon: MessageSquare },
     { name: 'Workspace', path: '/workspace', icon: Users },
     { name: 'Email Accounts', path: '/email', icon: Mail },
@@ -27,7 +26,7 @@ export default function Sidebar() {
     <div className="sidebar" style={{ borderRight: '1px solid #E5E7EB', backgroundColor: '#FAFBFD' }}>
       <div className="sidebar-header" style={{ padding: '1.25rem 1.5rem', marginBottom: '0.5rem' }}>
         <Link to="/dashboard" className="sidebar-brand" style={{ color: '#4F46E5', fontSize: '1.3rem', gap: '0.6rem' }}>
-          <Layers size={26} strokeWidth={2.5} /> StackForce
+          <Layers size={26} strokeWidth={2.5} /> TalentForce
         </Link>
       </div>
 

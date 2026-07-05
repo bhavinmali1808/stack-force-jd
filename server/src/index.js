@@ -8,6 +8,7 @@ const { connectDB } = require('./config/db');
 const authRoutes = require('./routes/auth.routes');
 const roleRoutes = require('./routes/role.routes');
 const candidateRoutes = require('./routes/candidate.routes');
+const emailRoutes = require('./routes/email.routes');
 const { errorHandler } = require('./middleware/error.middleware');
 
 const app = express();
@@ -27,6 +28,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Dat
 app.use('/api/auth', authRoutes);
 app.use('/api', roleRoutes);
 app.use('/api', candidateRoutes);
+app.use('/api/email', emailRoutes);
 
 // --- Error Handler (must be last) ---
 app.use(errorHandler);
@@ -35,6 +37,6 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`🚀 Stack Force JD API running on http://localhost:${PORT}`);
+    console.log(`🚀 TalentForce JD API running on http://localhost:${PORT}`);
   });
 });

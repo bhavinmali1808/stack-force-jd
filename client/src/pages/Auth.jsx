@@ -36,7 +36,7 @@ export default function Auth() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <Link to="/" style={{ fontSize: '1.4rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff, var(--accent-light))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-            StackForce JD
+            TalentForce JD
           </Link>
           <p style={{ marginTop: '0.3rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
             {mode === 'login' ? 'Welcome back' : 'Create your company account'}

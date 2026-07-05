@@ -41,8 +41,17 @@ export const rolesAPI = {
   remove: (id) => api.delete(`/roles/${id}`),
 };
 
+// --- Email ---
+export const emailAPI = {
+  list: () => api.get('/email'),
+  create: (data) => api.post('/email', data),
+  delete: (id) => api.delete(`/email/${id}`),
+};
+
 // --- Candidates ---
 export const candidatesAPI = {
+  create: (roleId, data) => api.post(`/roles/${roleId}/candidates`, data),
+  bulkUpload: (roleId, formData) => api.post(`/roles/${roleId}/candidates/bulk`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   upload: (roleId, formData) =>
     api.post(`/roles/${roleId}/candidates/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },

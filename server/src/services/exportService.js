@@ -37,7 +37,7 @@ const exportPDF = (candidates, role) => {
     doc
       .fontSize(20)
       .fillColor('#1a1a2e')
-      .text('Stack Force JD — Shortlist Report', { align: 'center' });
+      .text('TalentForce JD — Shortlist Report', { align: 'center' });
 
     doc.moveDown(0.5);
     doc

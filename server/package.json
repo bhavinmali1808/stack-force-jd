@@ -1,7 +1,7 @@
 {
   "name": "stack-force-jd-server",
   "version": "1.0.0",
-  "description": "Stack Force JD — Recruiter Portal API",
+  "description": "TalentForce JD — Recruiter Portal API",
   "main": "src/index.js",
   "scripts": {
     "dev": "nodemon src/index.js",

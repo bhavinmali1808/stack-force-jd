@@ -1,4 +1,4 @@
-# Stack Force JD — Recruiter Portal (Phase 1 MVP)
+# TalentForce JD — Recruiter Portal (Phase 1 MVP)
 
 > **Hire Smarter, Faster.** Post roles → bulk upload resumes → get an AI-ready ranked shortlist.
 
