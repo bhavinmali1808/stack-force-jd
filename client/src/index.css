@@ -1,6 +1,6 @@
 /* ============================================================
    STACK FORCE JD — DESIGN SYSTEM
-   Dark navy + electric blue recruiter portal
+   Clean White (Light) Theme
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
@@ -8,41 +8,41 @@
 /* --- CSS Variables (Design Tokens) --- */
 :root {
   /* Backgrounds */
-  --bg-primary: #0F172A;
-  --bg-secondary: #1E293B;
-  --bg-tertiary: #263148;
-  --bg-card: rgba(30, 41, 59, 0.85);
-  --bg-glass: rgba(15, 23, 42, 0.7);
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F8FAFC;
+  --bg-tertiary: #F1F5F9;
+  --bg-card: #FFFFFF;
+  --bg-glass: rgba(255, 255, 255, 0.85);
 
   /* Text */
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
   --text-muted: #64748B;
 
   /* Accent */
-  --accent: #3B82F6;
-  --accent-light: #60A5FA;
-  --accent-dark: #2563EB;
-  --accent-glow: rgba(59, 130, 246, 0.3);
+  --accent: #2563EB;
+  --accent-light: #3B82F6;
+  --accent-dark: #1D4ED8;
+  --accent-glow: rgba(37, 99, 235, 0.2);
 
   /* Semantic */
-  --success: #10B981;
-  --success-bg: rgba(16, 185, 129, 0.12);
-  --warning: #F59E0B;
-  --warning-bg: rgba(245, 158, 11, 0.12);
-  --danger: #F43F5E;
-  --danger-bg: rgba(244, 63, 94, 0.12);
-  --info: #06B6D4;
+  --success: #059669;
+  --success-bg: rgba(5, 150, 105, 0.1);
+  --warning: #D97706;
+  --warning-bg: rgba(217, 119, 6, 0.1);
+  --danger: #DC2626;
+  --danger-bg: rgba(220, 38, 38, 0.1);
+  --info: #0891B2;
 
   /* Borders */
-  --border: rgba(148, 163, 184, 0.12);
-  --border-active: rgba(59, 130, 246, 0.5);
+  --border: #E2E8F0;
+  --border-active: rgba(37, 99, 235, 0.4);
 
   /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 24px rgba(59, 130, 246, 0.2);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --shadow-glow: 0 0 20px rgba(37, 99, 235, 0.15);
 
   /* Radius */
   --radius-sm: 8px;

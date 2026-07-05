@@ -7,6 +7,7 @@ const {
   deleteCandidate,
   exportCandidates,
   getRoleAnalytics,
+  fetchLinkedInData,
 } = require('../controllers/candidate.controller');
 const { protect } = require('../middleware/auth.middleware');
 const { upload } = require('../middleware/upload.middleware');
@@ -23,6 +24,7 @@ router.get('/roles/:roleId/analytics', getRoleAnalytics);
 router.get('/candidates/:id', getCandidateById);
 router.patch('/candidates/:id/status', updateCandidateStatus);
 router.delete('/candidates/:id', deleteCandidate);
+router.post('/roles/:roleId/candidates/:id/linkedin', fetchLinkedInData);
 
 module.exports = router;
 

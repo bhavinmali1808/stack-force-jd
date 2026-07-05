@@ -54,6 +54,7 @@ export const candidatesAPI = {
   export: (roleId, format = 'csv') =>
     api.get(`/roles/${roleId}/export`, { params: { format }, responseType: 'blob' }),
   analytics: (roleId) => api.get(`/roles/${roleId}/analytics`),
+  fetchLinkedIn: (roleId, id, linkedinUrl) => api.post(`/roles/${roleId}/candidates/${id}/linkedin`, { linkedinUrl }),
 };
 
 export default api;

@@ -6,6 +6,7 @@ const { parseResume } = require('../services/resumeParser');
 const { computeMatchScore } = require('../services/skillMatcher');
 const { exportCSV, exportPDF } = require('../services/exportService');
 const { analyzeResumeWithAI } = require('../services/aiService');
+const { fetchLinkedInProfile } = require('../services/linkedinScraper');
 
 /**
  * POST /api/roles/:roleId/candidates/upload
@@ -266,7 +267,39 @@ const exportCandidates = async (req, res) => {
   res.send(csv);
 };
 
+/**
+ * POST /api/roles/:roleId/candidates/:id/linkedin
+ * Phase 4: Fetch LinkedIn Data
+ */
+const fetchLinkedInData = async (req, res) => {
+  try {
+    const { roleId, id } = req.params;
+    const { linkedinUrl } = req.body;
+
+    if (!linkedinUrl) {
+      return res.status(400).json({ message: 'LinkedIn URL is required' });
+    }
+
+    const candidate = await Candidate.findOne({ _id: id, role: roleId, company: req.company._id });
+    if (!candidate) {
+      return res.status(404).json({ message: 'Candidate not found' });
+    }
+
+    // Call the scraper service
+    const linkedinData = await fetchLinkedInProfile(linkedinUrl);
+
+    // Save to the candidate model
+    candidate.linkedinData = linkedinData;
+    await candidate.save();
+
+    res.status(200).json({ message: 'LinkedIn data fetched successfully', candidate });
+  } catch (error) {
+    console.error('LinkedIn Scraper Error:', error);
+    res.status(500).json({ message: 'Failed to fetch LinkedIn data' });
+  }
+};
+
 module.exports = {
   uploadCandidates, getCandidates, getCandidateById, updateCandidateStatus,
-  deleteCandidate, exportCandidates, getRoleAnalytics,
+  deleteCandidate, exportCandidates, getRoleAnalytics, fetchLinkedInData,
 };

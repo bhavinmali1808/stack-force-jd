@@ -16,6 +16,8 @@ export default function CandidateDetail() {
   const [notes, setNotes] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
   const [deleted, setDeleted] = useState(false);
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [fetchingLinkedIn, setFetchingLinkedIn] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -58,10 +60,24 @@ export default function CandidateDetail() {
   const handleDelete = async () => {
     if (!confirm('Remove this candidate permanently?')) return;
     try {
-      await candidatesAPI.remove(cid);
+      await candidatesAPI.delete(cid);
       navigate(`/roles/${roleId}`);
     } catch (err) {
       alert('Delete failed.');
+    }
+  };
+
+  const handleFetchLinkedIn = async () => {
+    if (!linkedinUrl.trim()) return alert('Please enter a LinkedIn URL');
+    setFetchingLinkedIn(true);
+    try {
+      const res = await candidatesAPI.fetchLinkedIn(roleId, cid, linkedinUrl);
+      setCandidate(res.data.candidate);
+      setLinkedinUrl('');
+    } catch (err) {
+      alert('Failed to fetch LinkedIn profile: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setFetchingLinkedIn(false);
     }
   };
 
@@ -194,6 +210,74 @@ export default function CandidateDetail() {
             <div className="card" style={{ padding: '1.25rem' }}>
               <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>Skill Breakdown</h3>
               <SkillBreakdown candidate={candidate} />
+            </div>
+
+            {/* Phase 4: LinkedIn Scraping Data */}
+            <div className="card" style={{ padding: '1.25rem' }}>
+              <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-light)' }}>
+                <span>🔗</span> LinkedIn Profile
+              </h3>
+              
+              {!candidate.linkedinData ? (
+                <div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>No LinkedIn data fetched yet.</p>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input 
+                      type="url" 
+                      className="form-input" 
+                      placeholder="https://linkedin.com/in/username" 
+                      value={linkedinUrl}
+                      onChange={(e) => setLinkedinUrl(e.target.value)}
+                      style={{ padding: '0.5rem', fontSize: '0.85rem' }}
+                    />
+                    <button 
+                      className="btn btn-primary btn-sm" 
+                      onClick={handleFetchLinkedIn}
+                      disabled={fetchingLinkedIn}
+                    >
+                      {fetchingLinkedIn ? 'Fetching...' : 'Fetch'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <p style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>{candidate.linkedinData.currentTitle}</p>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{candidate.linkedinData.currentCompany} · {candidate.linkedinData.location}</p>
+                    </div>
+                    <a href={candidate.linkedinData.profileUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm" style={{ fontSize: '0.7rem' }}>
+                      View on LinkedIn ↗
+                    </a>
+                  </div>
+                  
+                  <div>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>About</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>{candidate.linkedinData.about}</p>
+                  </div>
+
+                  <div>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Verified Skills</p>
+                    <div className="skill-pills">
+                      {candidate.linkedinData.skills?.map(s => (
+                        <span key={s} className="skill-pill" style={{ opacity: 0.8 }}>{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Experience History</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {candidate.linkedinData.experience?.map((exp, i) => (
+                        <div key={i} style={{ fontSize: '0.8rem', paddingLeft: '0.5rem', borderLeft: '2px solid var(--border)' }}>
+                          <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{exp.title}</p>
+                          <p style={{ color: 'var(--text-secondary)' }}>{exp.company} <span style={{ color: 'var(--text-muted)' }}>({exp.duration})</span></p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Notes */}

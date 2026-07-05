@@ -111,6 +111,11 @@ const candidateSchema = new mongoose.Schema(
     mustHaveMissing: { type: [String], default: [] },
     niceToHaveMatched: { type: [String], default: [] },
     niceToHaveMissing: { type: [String], default: [] },
+    // Phase 4: LinkedIn Scraping Data
+    linkedinData: {
+      type: Object,
+      default: null,
+    },
   },
   { timestamps: true }
 );
