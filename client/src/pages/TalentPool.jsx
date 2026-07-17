@@ -42,13 +42,28 @@ function usePoolUpload(companyId) {
         { files: files.map(f => ({ name: f.name, size: f.size })) },
         { headers: authHeaders() });
 
-      const BATCH = 10;
+      const BATCH = 5;
       for (let i = 0; i < data.tokens.length; i += BATCH) {
-        await Promise.all(data.tokens.slice(i, i + BATCH).map(async ({ uploadUrl }, j) => {
+        await Promise.all(data.tokens.slice(i, i + BATCH).map(async (tokenObj, j) => {
           const file = files[i + j];
-          const form = new FormData(); form.append('file', file);
+          if (!file) return;
+          const { uploadUrl, confirmUrl, r2Key, filename, direct } = tokenObj;
           try {
-            await axios.put(`${API}${uploadUrl}`, form, { headers: authHeaders() });
+            if (direct) {
+              // Production: PUT raw file directly to R2 presigned URL (no auth header!)
+              await axios.put(uploadUrl, file, {
+                headers: { 'Content-Type': 'application/octet-stream' },
+              });
+              // Then notify our server that the file is in R2
+              await axios.post(confirmUrl || `${API}/api/pool/confirm`,
+                { r2Key, filename },
+                { headers: authHeaders() });
+            } else {
+              // Dev: send file through our server
+              const form = new FormData();
+              form.append('file', file);
+              await axios.put(`${API}${uploadUrl}`, form, { headers: authHeaders() });
+            }
             setUploaded(n => n + 1);
           } catch { /* individual failures are non-fatal */ }
         }));
@@ -56,6 +71,7 @@ function usePoolUpload(companyId) {
     } catch (e) { setError(e.response?.data?.error || e.message); }
     finally { setIsUploading(false); }
   }, []);
+
 
   const reset = useCallback(() => {
     setTotal(0);

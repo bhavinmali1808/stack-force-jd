@@ -1,11 +1,12 @@
 /**
  * pool.routes.js — Talent Pool API
  * ─────────────────────────────────────────────────────────────
- * POST /api/pool/presign          → get upload tokens
- * PUT  /api/pool/upload/:token    → upload file, enqueue job
- * GET  /api/pool                  → list pool resumes (paginated)
- * GET  /api/pool/stats            → stats: total, done, skills
- * DELETE /api/pool/:id            → remove from pool
+ * POST /api/pool/presign            → get R2 presigned URLs (production) or local tokens (dev)
+ * POST /api/pool/confirm            → after direct R2 upload, confirm and enqueue job
+ * PUT  /api/pool/upload/:token      → (dev only) upload file via server, enqueue job
+ * GET  /api/pool                    → list pool resumes (paginated)
+ * GET  /api/pool/stats              → stats: total, done, skills
+ * DELETE /api/pool/:id              → remove from pool
  *
  * POST /api/roles/:roleId/suggestions       → auto-suggest from pool
  * POST /api/roles/:roleId/suggest-add/:poolId → add pool candidate to role
@@ -20,13 +21,15 @@ const { protect } = require('../middleware/auth.middleware');
 const { enqueuePoolResume } = require('../queue/poolQueue');
 const { autoSuggest, addPoolCandidateToRole } = require('../services/autoSuggest');
 const PoolResume = require('../models/PoolResume');
+const { getPresignedUploadUrl, IS_PRODUCTION, BUCKET } = require('../services/storageService');
 
 const router = express.Router();
 
-// ── Storage setup ──────────────────────────────────────────────
+// ── Local dev storage setup ────────────────────────────────────
 const UPLOAD_DIR = path.join(__dirname, '../../uploads/pool');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
+// In-memory token store (dev only fallback)
 const pendingTokens = new Map();
 
 const storage = multer.diskStorage({
@@ -53,7 +56,8 @@ router.use(protect);
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/pool/presign
-// Get upload tokens for batch pool upload (S3 presign pattern)
+// Production: returns real R2 presigned PUT URLs (browser uploads directly to R2)
+// Dev: returns local upload tokens (browser uploads through this server)
 // ─────────────────────────────────────────────────────────────
 router.post('/presign', async (req, res) => {
   const { files } = req.body;
@@ -61,19 +65,78 @@ router.post('/presign', async (req, res) => {
     return res.status(400).json({ error: 'files[] required' });
   }
 
-  const tokens = files.map((file) => {
-    const token = uuidv4();
-    pendingTokens.set(token, { companyId: req.company._id, originalName: file.name });
-    setTimeout(() => pendingTokens.delete(token), 15 * 60 * 1000);
-    return { token, uploadUrl: `/api/pool/upload/${token}`, filename: file.name };
-  });
+  try {
+    const tokens = await Promise.all(files.map(async (file) => {
+      const token = uuidv4();
+      const ext = path.extname(file.name).toLowerCase() || '.pdf';
+      const r2Key = `pool/${req.company._id}/${token}${ext}`;
 
-  res.json({ tokens });
+      if (IS_PRODUCTION) {
+        // Real R2 presigned URL — browser uploads directly to R2, bypassing this server
+        const uploadUrl = await getPresignedUploadUrl(r2Key, 'application/octet-stream', 900);
+        return {
+          token,
+          uploadUrl,          // Full R2 URL — use this for the actual PUT
+          confirmUrl: `${req.protocol}://${req.get('host')}/api/pool/confirm`,
+          r2Key,
+          filename: file.name,
+          direct: true,       // Frontend: PUT directly to uploadUrl, then POST to confirmUrl
+        };
+      } else {
+        // Dev: upload through this server
+        pendingTokens.set(token, { companyId: req.company._id, originalName: file.name });
+        setTimeout(() => pendingTokens.delete(token), 15 * 60 * 1000);
+        return {
+          token,
+          uploadUrl: `/api/pool/upload/${token}`,
+          filename: file.name,
+          direct: false,
+        };
+      }
+    }));
+
+    res.json({ tokens });
+  } catch (err) {
+    console.error('[Pool Presign Error]', err);
+    res.status(500).json({ error: 'Failed to generate upload URLs' });
+  }
 });
 
 // ─────────────────────────────────────────────────────────────
-// PUT /api/pool/upload/:token
-// Receive file, create PoolResume doc, enqueue job
+// POST /api/pool/confirm
+// Production only: called by browser AFTER a successful direct R2 upload.
+// Creates PoolResume doc and enqueues the parsing job.
+// Body: { r2Key, filename, token }
+// ─────────────────────────────────────────────────────────────
+router.post('/confirm', async (req, res) => {
+  const { r2Key, filename } = req.body;
+  if (!r2Key || !filename) {
+    return res.status(400).json({ error: 'r2Key and filename are required' });
+  }
+
+  try {
+    const poolResume = await PoolResume.create({
+      company: req.company._id,
+      resumeUrl: r2Key,           // Store the R2 key, not a local path
+      resumeFilename: filename,
+      processingStatus: 'queued',
+    });
+
+    const jobId = await enqueuePoolResume({
+      poolResumeId: poolResume._id.toString(),
+      r2Key,                       // Worker will download from R2 using this key
+      companyId: req.company._id,
+    });
+
+    res.status(202).json({ poolResumeId: poolResume._id, jobId, status: 'queued' });
+  } catch (err) {
+    console.error('[Pool Confirm Error]', err);
+    res.status(500).json({ error: 'Failed to enqueue resume' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// PUT /api/pool/upload/:token  (DEV ONLY — local disk upload)
 // ─────────────────────────────────────────────────────────────
 router.put('/upload/:token', upload.single('file'), async (req, res) => {
   const { token } = req.params;
