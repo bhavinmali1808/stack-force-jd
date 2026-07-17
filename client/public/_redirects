@@ -1,0 +1,4 @@
+# Cloudflare Pages SPA Routing Fix
+# All routes fall back to index.html for React Router to handle
+
+/*    /index.html   200

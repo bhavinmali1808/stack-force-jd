@@ -1,17 +1,14 @@
 /**
- * storage.routes.js
+ * storage.routes.js — Unified file upload handler
  * ─────────────────────────────────────────────────────────────
- * Simulates the AWS S3 presigned URL pattern for local dev.
+ * DEVELOPMENT flow (local disk):
+ *   1. POST /api/storage/presign  → server generates token, returns local upload URL
+ *   2. PUT  /api/storage/upload/:token → file saved to disk, job enqueued
  *
- * Production flow:
- *   1. Client hits AWS to get a presigned PUT URL
- *   2. Client uploads file directly to S3 (bypasses your backend)
- *   3. S3 triggers an SQS event → worker picks it up
- *
- * Local equivalent:
- *   1. Client POSTs to /api/storage/presign → gets a token + upload URL
- *   2. Client PUTs file to /api/storage/upload/:token (this server)
- *   3. File saved to disk, job enqueued in BullMQ → worker picks it up
+ * PRODUCTION flow (Cloudflare R2):
+ *   1. POST /api/storage/presign  → server generates real R2 presigned PUT URL
+ *   2. Client uploads DIRECTLY to R2 (bypasses backend — true presigned upload)
+ *   3. Client POSTs /api/storage/confirm/:token → job enqueued
  */
 
 const express = require('express');
@@ -21,32 +18,33 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { protect } = require('../middleware/auth.middleware');
 const { enqueueResume } = require('../queue/queueFactory');
+const { getPresignedUploadUrl, IS_PRODUCTION, BUCKET } = require('../services/storageService');
 const Candidate = require('../models/Candidate');
 const Role = require('../models/Role');
 
 const router = express.Router();
 
-// ── Token store: in-memory map of token → { roleId, companyId, filename } ──
+// ── Token store: in-memory map of token → metadata ──────────
 // In production this would be Redis with a TTL.
 const pendingTokens = new Map();
 
-// ── Upload storage: save to uploads/resumes/ ─────────────────
+// ── Dev-only: multer disk storage ─────────────────────────
 const UPLOAD_DIR = path.join(__dirname, '../../uploads/resumes');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+if (!IS_PRODUCTION && !fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: UPLOAD_DIR,
   filename: (req, file, cb) => {
-    const token = req.params.token;
-    const meta = pendingTokens.get(token);
     const ext = path.extname(file.originalname);
-    cb(null, `${token}${ext}`);
+    cb(null, `${req.params.token}${ext}`);
   },
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB per file
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['.pdf', '.doc', '.docx', '.txt'];
     const ext = path.extname(file.originalname).toLowerCase();
@@ -58,7 +56,9 @@ const upload = multer({
 // ─────────────────────────────────────────────────────────────
 // POST /api/storage/presign
 // Body: { roleId, files: [{ name, size }] }
-// Returns: [{ token, uploadUrl, filename }] — one per file
+// Returns: [{ token, uploadUrl, filename, direct }]
+//   direct=true means client uploads straight to R2 (production)
+//   direct=false means client uploads to our server (dev)
 // ─────────────────────────────────────────────────────────────
 router.post('/presign', protect, async (req, res) => {
   const { roleId, files } = req.body;
@@ -67,81 +67,103 @@ router.post('/presign', protect, async (req, res) => {
     return res.status(400).json({ error: 'roleId and files[] are required' });
   }
 
-  const role = await Role.findOne({ _id: roleId, company: req.user.companyId });
+  const role = await Role.findOne({ _id: roleId, company: req.company._id });
   if (!role) return res.status(404).json({ error: 'Role not found' });
 
-  // Generate one token per file
-  const tokens = files.map((file) => {
+  const tokens = await Promise.all(files.map(async (file) => {
     const token = uuidv4();
+    const ext = path.extname(file.name).toLowerCase() || '.pdf';
+    const r2Key = `resumes/${req.company._id}/${token}${ext}`;
+
     const meta = {
       roleId,
-      companyId: req.user.companyId,
+      companyId: req.company._id,
       originalName: file.name,
       requiredSkills: role.requiredSkills,
       weightedSkills: role.weightedSkills,
+      r2Key,
     };
     pendingTokens.set(token, meta);
-
-    // Tokens expire after 15 minutes (production: S3 URL TTL)
     setTimeout(() => pendingTokens.delete(token), 15 * 60 * 1000);
 
-    return {
-      token,
-      uploadUrl: `/api/storage/upload/${token}`,
-      filename: file.name,
-    };
-  });
+    if (IS_PRODUCTION) {
+      // Real presigned URL — client uploads directly to R2
+      const presignedUrl = await getPresignedUploadUrl(r2Key, 'application/octet-stream');
+      return { token, uploadUrl: presignedUrl, confirmUrl: `/api/storage/confirm/${token}`, filename: file.name, direct: true };
+    } else {
+      // Dev: upload to our local server
+      return { token, uploadUrl: `/api/storage/upload/${token}`, filename: file.name, direct: false };
+    }
+  }));
 
   res.json({ tokens });
 });
 
 // ─────────────────────────────────────────────────────────────
-// PUT /api/storage/upload/:token
-// Receives the actual file, saves to disk, creates a
-// Candidate doc in "queued" state, then enqueues the job.
+// PUT /api/storage/upload/:token (DEV ONLY)
+// Receives the actual file, saves to disk, creates Candidate, enqueues job.
 // ─────────────────────────────────────────────────────────────
-router.put('/upload/:token', upload.single('file'), async (req, res) => {
+router.put('/upload/:token', protect, upload.single('file'), async (req, res) => {
   const { token } = req.params;
   const meta = pendingTokens.get(token);
 
   if (!meta) {
-    // Clean up orphaned upload if token not found
     if (req.file) fs.unlinkSync(req.file.path);
     return res.status(400).json({ error: 'Invalid or expired upload token' });
   }
+  if (!req.file) return res.status(400).json({ error: 'No file received' });
 
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file received' });
-  }
-
-  // Create the candidate record in MongoDB with status "queued"
   const candidate = await Candidate.create({
     role: meta.roleId,
-    company: meta.companyId,
+    company: meta.companyId.toString(),
     resumeUrl: `/uploads/resumes/${req.file.filename}`,
     resumeFilename: meta.originalName,
     processingStatus: 'queued',
-    // name/email/skills will be filled by the worker
   });
 
-  // Enqueue the resume processing job
   const jobId = await enqueueResume({
     candidateId: candidate._id.toString(),
     filePath: req.file.path,
+    resumeKey: null, // local path used in dev
     roleId: meta.roleId,
     requiredSkills: meta.requiredSkills,
     weightedSkills: meta.weightedSkills,
   });
 
-  // Cleanup token
   pendingTokens.delete(token);
+  res.status(202).json({ candidateId: candidate._id, jobId, status: 'queued' });
+});
 
-  res.status(202).json({
-    candidateId: candidate._id,
-    jobId,
-    status: 'queued',
-    message: 'Resume queued for processing',
+// ─────────────────────────────────────────────────────────────
+// POST /api/storage/confirm/:token (PRODUCTION ONLY)
+// Called after client has uploaded directly to R2.
+// Creates Candidate doc and enqueues the parsing job.
+// ─────────────────────────────────────────────────────────────
+router.post('/confirm/:token', protect, async (req, res) => {
+  const { token } = req.params;
+  const meta = pendingTokens.get(token);
+
+  if (!meta) return res.status(400).json({ error: 'Invalid or expired upload token' });
+
+  const candidate = await Candidate.create({
+    role: meta.roleId,
+    company: meta.companyId.toString(),
+    resumeUrl: meta.r2Key,
+    resumeFilename: meta.originalName,
+    processingStatus: 'queued',
   });
+
+  const jobId = await enqueueResume({
+    candidateId: candidate._id.toString(),
+    filePath: null,
+    resumeKey: meta.r2Key, // R2 object key
+    roleId: meta.roleId,
+    requiredSkills: meta.requiredSkills,
+    weightedSkills: meta.weightedSkills,
+  });
+
+  pendingTokens.delete(token);
+  res.status(202).json({ candidateId: candidate._id, jobId, status: 'queued' });
 });
 
 module.exports = router;

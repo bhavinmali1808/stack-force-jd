@@ -1,12 +1,24 @@
 /**
  * queueFactory.js — Resume Processing Queue (role-specific uploads)
- * Uses SimpleQueue (in-memory) for local dev.
+ * ─────────────────────────────────────────────────────────────────
+ * Development: Uses SimpleQueue (in-memory, no Redis required)
+ * Production:  Uses BullMQ with real Redis (Upstash)
  */
 
-const { getQueue } = require('./simpleQueue');
-
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const QUEUE_NAME = 'resume-processing';
-const resumeQueue = getQueue(QUEUE_NAME, { concurrency: 4, maxRetries: 3 });
+
+let resumeQueue;
+
+if (IS_PRODUCTION) {
+  const { Queue } = require('bullmq');
+  const { getRedisClient } = require('../config/redis');
+  const connection = getRedisClient();
+  resumeQueue = new Queue(QUEUE_NAME, { connection, defaultJobOptions: { attempts: 3, backoff: { type: 'exponential', delay: 1000 } } });
+} else {
+  const { getQueue } = require('./simpleQueue');
+  resumeQueue = getQueue(QUEUE_NAME, { concurrency: 4, maxRetries: 3 });
+}
 
 /**
  * Enqueue a resume processing job.
@@ -16,7 +28,14 @@ const enqueueResume = async (payload) => {
   return job.id;
 };
 
-const getQueueStats = () => {
+const getQueueStats = async () => {
+  if (IS_PRODUCTION) {
+    const [waiting, active] = await Promise.all([
+      resumeQueue.getWaitingCount(),
+      resumeQueue.getActiveCount(),
+    ]);
+    return { waiting, active };
+  }
   const stats = resumeQueue.getStats();
   return { waiting: stats.waiting, active: stats.active };
 };

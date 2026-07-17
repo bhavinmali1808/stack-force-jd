@@ -40,6 +40,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // --- Routes ---
+app.get('/', (req, res) => res.send('TalentForce JD API is running...'));
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date(), worker: process.pid }));
 app.use('/api/auth', authRoutes);
 app.use('/api', roleRoutes);

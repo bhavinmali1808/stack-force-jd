@@ -1,6 +1,43 @@
+# Dependencies
 node_modules/
+
+# Uploads (local dev only — production uses R2)
 uploads/
+server/uploads/
+
+# Environment (NEVER commit real .env)
 .env
-*.log
+.env.local
+.env.production.local
+server/.env
+client/.env.local
+
+# Build outputs
 dist/
+client/dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+
+# Temp / test scripts
+server/test_*.js
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/

@@ -48,7 +48,7 @@ function usePoolUpload(companyId) {
           const file = files[i + j];
           const form = new FormData(); form.append('file', file);
           try {
-            await axios.put(`${API}${uploadUrl}`, form);
+            await axios.put(`${API}${uploadUrl}`, form, { headers: authHeaders() });
             setUploaded(n => n + 1);
           } catch { /* individual failures are non-fatal */ }
         }));
@@ -221,7 +221,7 @@ export default function TalentPool() {
                   <div style={{ marginTop: '0.75rem', maxHeight: 160, overflowY: 'auto' }}>
                     {liveNames.map((name, i) => (
                       <div key={i} style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', background: 'var(--bg-tertiary)', borderRadius: 4, marginBottom: '0.2rem' }}>
-                        ✅ {name}
+                         {name}
                       </div>
                     ))}
                   </div>
@@ -241,7 +241,7 @@ export default function TalentPool() {
           {/* Top Skills in Pool */}
           {stats?.topSkills?.length > 0 && (
             <div className="card" style={{ padding: '1.5rem' }}>
-              <h3 style={{ marginBottom: '1rem' }}>🔥 Top Skills in Pool</h3>
+              <h3 style={{ marginBottom: '1rem' }}> Top Skills in Pool</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {stats.topSkills.slice(0, 12).map(({ skill, count }) => (
                   <div key={skill} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
