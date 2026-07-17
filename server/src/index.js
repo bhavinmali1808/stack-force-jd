@@ -51,7 +51,7 @@ app.use(cors({
 // ── Rate Limiting ──────────────────────────────────────────
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10000, // Increased to 10,000 for bulk resume uploads
+  max: 50000, // Increased to 50,000 to safely allow 5,000+ resume bulk uploads
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please slow down.' },
