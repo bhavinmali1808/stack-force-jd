@@ -41,6 +41,7 @@ const poolResumeSchema = new mongoose.Schema(
     extractedSkills: { type: [String], default: [] },
     resumeText: { type: String, default: '', select: false },
     yearsOfExperience: { type: Number, default: null },
+    monthsOfExperience: { type: Number, default: null },
     cgpa: { type: Number, default: null },
     college: { type: String, default: '' },
     currentRole: { type: String, default: 'Unknown Role' },

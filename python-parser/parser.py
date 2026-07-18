@@ -156,12 +156,13 @@ EXP_EXPLICIT_RE = re.compile(r"(\d+)\+?\s*(?:yrs|years?)\s*(?:of\s*)?(?:work\s*)
 EXP_BROAD_RE = re.compile(r"(?:experience|exp)[^\w]*(\d+)\+?\s*y", re.I)
 
 def extract_experience(text: str) -> Optional[int]:
+    """Returns total months of experience."""
     # Try explicit "X years of experience" first
     m = EXP_EXPLICIT_RE.search(text) or EXP_BROAD_RE.search(text)
     if m:
         val = int(m.group(1))
         if 0 <= val <= 50:
-            return val
+            return val * 12
 
     # Try summing date ranges in the text
     current_year = datetime.now().year
@@ -179,7 +180,7 @@ def extract_experience(text: str) -> Optional[int]:
             total_months += (end_year - start_year) * 12
 
     if total_months > 0:
-        return min(round(total_months / 12), 50)
+        return min(total_months, 50 * 12)
 
     return None
 
@@ -290,7 +291,9 @@ def parse_resume(file_path: str) -> dict:
     name = extract_name(text, email)
     skills = extract_skills(text)
     cgpa = extract_cgpa(text)
-    experience = extract_experience(text)
+    total_exp_months = extract_experience(text)
+    exp_years = total_exp_months // 12 if total_exp_months else None
+    exp_months = total_exp_months % 12 if total_exp_months else None
     college = extract_college(text)
     current_role = extract_current_role(text)
     sections = detect_sections(text)
@@ -300,7 +303,8 @@ def parse_resume(file_path: str) -> dict:
         "email": email,
         "phone": phone,
         "extracted_skills": skills,
-        "years_of_experience": experience,
+        "years_of_experience": exp_years,
+        "months_of_experience": exp_months,
         "cgpa": cgpa,
         "college": college,
         "current_role": current_role,

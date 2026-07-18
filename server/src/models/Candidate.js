@@ -85,6 +85,10 @@ const candidateSchema = new mongoose.Schema(
       type: Number,
       default: null,
     },
+    monthsOfExperience: {
+      type: Number,
+      default: null,
+    },
     cgpa: {
       type: Number,
       default: null,

@@ -99,7 +99,7 @@ export default function Explore() {
             style={{ padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', background: '#4F46E5', borderRadius: '8px', border: 'none', color: '#fff', fontWeight: 500 }}
             onClick={() => setUploadModalOpen(true)}
           >
-            <Upload size={16} /> Bulk Upload
+            + Talent
           </button>
           <button className="btn btn-ghost btn-icon" style={{ padding: '0.4rem', color: '#9CA3AF' }}>
             <Bell size={20} />
@@ -116,8 +116,8 @@ export default function Explore() {
             <input 
               type="text" 
               className="form-input" 
-              placeholder={"Search By Name, Role or Company"} 
-              style={{ width: '100%', padding: '0.6rem 1rem 0.6rem 2.75rem', borderRadius: '8px', background: '#fff', border: '1px solid #E5E7EB' }}
+              placeholder={"Search By Name or LinkedIn Url"} 
+              style={{ width: '100%', padding: '0.6rem 1rem 0.6rem 2.75rem', borderRadius: '8px', background: '#fff', border: '1px solid #E5E7EB', fontSize: '0.9rem' }}
               value={keyword}
               onChange={(e) => {
                 setKeyword(e.target.value);
@@ -157,6 +157,7 @@ export default function Explore() {
                 <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Experience</th>
                 <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Location</th>
                 <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Tags</th>
+                <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Core Skills</th>
               </tr>
             </thead>
             <tbody>
@@ -171,53 +172,83 @@ export default function Explore() {
                 </tr>
               ) : displayCandidates.length === 0 ? (
                 <tr>
-                  <td colSpan="6" style={{ padding: '3rem', textAlign: 'center', color: '#6B7280' }}>
+                  <td colSpan="7" style={{ padding: '3rem', textAlign: 'center', color: '#6B7280' }}>
                     No candidates found in your global dataset.
                   </td>
                 </tr>
-                  <tr 
-                    key={candidate._id} 
-                    style={{ borderBottom: '1px solid #E5E7EB', transition: 'background 0.2s', background: selectedIds.includes(candidate._id) ? '#F3F4F6' : 'transparent', cursor: 'pointer' }}
-                    onClick={(e) => {
-                      if (e.target.type !== 'checkbox') setViewingCandidateId(candidate._id);
-                    }}
-                  >
-                    <td style={{ padding: '1rem 1.5rem' }}>
-                      <input type="checkbox" checked={selectedIds.includes(candidate._id)} onChange={() => toggleSelect(candidate._id)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
-                    </td>
-                    <td style={{ padding: '1rem 1.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <div style={{ 
-                          width: 32, height: 32, borderRadius: '50%', background: '#4F46E5', color: '#fff',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.85rem'
-                        }}>
-                          {nameStr[0]?.toUpperCase()}
+              ) : displayCandidates.map(candidate => {
+                  const nameStr = candidate.name || 'Unknown Candidate';
+                  const avatarUrl = candidate.avatar || `https://i.pravatar.cc/150?u=${candidate._id}`;
+                  const companyStr = candidate.company || 'Unknown Company';
+                  
+                  let expStr = '-';
+                  if (candidate.yearsOfExperience != null) {
+                    expStr = `${candidate.yearsOfExperience} yrs`;
+                    if (candidate.monthsOfExperience) {
+                      expStr += ` ${candidate.monthsOfExperience} mos`;
+                    }
+                  }
+                  
+                  const locationStr = candidate.location || '-';
+                  
+                  return (
+                    <tr 
+                      key={candidate._id} 
+                      style={{ borderBottom: '1px solid #E5E7EB', transition: 'background 0.2s', background: selectedIds.includes(candidate._id) ? '#F3F4F6' : 'transparent', cursor: 'pointer' }}
+                      onClick={(e) => {
+                        if (e.target.type !== 'checkbox') setViewingCandidateId(candidate._id);
+                      }}
+                    >
+                      <td style={{ padding: '1rem 1.5rem' }}>
+                        <input type="checkbox" checked={selectedIds.includes(candidate._id)} onChange={() => toggleSelect(candidate._id)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+                      </td>
+                      <td style={{ padding: '1rem 1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <img src={avatarUrl} alt={nameStr} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
+                          <div style={{ fontWeight: 600, color: '#111827', fontSize: '0.9rem' }}>{nameStr}</div>
                         </div>
-                        <div>
-                           <div style={{ fontWeight: 600, color: '#111827', fontSize: '0.9rem' }}>{nameStr}</div>
-                           <div style={{ fontSize: '0.8rem', color: '#6B7280' }}>{candidate.email || 'No email'}</div>
+                      </td>
+                      <td style={{ padding: '1rem 1.5rem' }}>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827' }}>{candidate.currentRole || candidate.title || 'Unknown Role'}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#6B7280' }}>{companyStr}</div>
+                      </td>
+                      <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: '#4B5563' }}>
+                        {expStr}
+                      </td>
+                      <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        {locationStr}
+                      </td>
+                      <td style={{ padding: '1rem 1.5rem' }}>
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                           {candidate.status ? (
+                             <span style={{ background: '#E0F2FE', color: '#0284C7', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
+                               {candidate.status === 'Applied' ? '✨ New Applicant' : `✨ ${candidate.status}`}
+                             </span>
+                           ) : '-'}
                         </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: '1rem 1.5rem' }}>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#374151' }}>{candidate.currentRole || candidate.title || 'Unknown Role'}</div>
-                    </td>
-                    <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: '#4B5563' }}>
-                      {expStr}
-                    </td>
-                    <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: '#6B7280' }}>
-                      {locationStr}
-                    </td>
-                    <td style={{ padding: '1rem 1.5rem' }}>
-                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                        {candidate.extractedSkills?.slice(0, 2).map((tag, i) => (
-                           <span key={i} style={{ background: '#EEF2FF', color: '#4F46E5', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, border: '1px solid #C7D2FE' }}>
-                             {tag}
-                           </span>
-                        )) || '-'}
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                      <td style={{ padding: '1rem 1.5rem' }}>
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                          {(!candidate.extractedSkills || candidate.extractedSkills.length === 0) ? (
+                            <span style={{ color: '#6B7280', fontSize: '0.85rem' }}>No skills listed</span>
+                          ) : (
+                            <>
+                              {candidate.extractedSkills.slice(0, 2).map((skill, i) => (
+                                <span key={i} style={{ background: '#F3F4F6', color: '#4B5563', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                  {skill}
+                                </span>
+                              ))}
+                              {candidate.extractedSkills.length > 2 && (
+                                <span style={{ background: '#EEF2FF', color: '#4F46E5', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                  +{candidate.extractedSkills.length - 2}
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
                 );
               })}
             </tbody>

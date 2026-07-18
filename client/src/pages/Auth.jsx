@@ -22,7 +22,11 @@ export default function Auth() {
       }
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        setError(err.response.data.errors[0].msg);
+      } else {
+        setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -86,7 +90,7 @@ export default function Auth() {
               id="auth-password"
               type="password"
               className="form-input"
-              placeholder={mode === 'register' ? 'Min 6 characters' : '••••••••'}
+              placeholder={mode === 'register' ? 'Min 8 chars, 1 number, 1 uppercase' : '••••••••'}
               value={form.password}
               onChange={set('password')}
               required
