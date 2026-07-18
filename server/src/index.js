@@ -35,7 +35,7 @@ app.use(helmet({
 }));
 
 // Trust Cloudflare/Railway proxy headers
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 
 // ── Logging ─────────────────────────────────────────────────
 app.use(morgan(IS_PRODUCTION ? 'combined' : 'dev'));
@@ -62,7 +62,7 @@ const globalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5, // max 5 login/register attempts per 15 min (anti-brute force)
+  max: 100, // increased to prevent locking out users behind proxies
   message: { error: 'Too many auth attempts, please try again later.' },
 });
 
