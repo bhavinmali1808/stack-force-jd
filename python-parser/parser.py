@@ -152,11 +152,12 @@ YEAR_RANGE_RE = re.compile(
     r"((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*)?(\d{4})\s*[-–—to]+\s*(present|current|now|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*\d{4}|\d{4})",
     re.I
 )
-EXP_EXPLICIT_RE = re.compile(r"(\d+)\+?\s*years?\s*(?:of\s*)?(?:work\s*)?experience", re.I)
+EXP_EXPLICIT_RE = re.compile(r"(\d+)\+?\s*(?:yrs|years?)\s*(?:of\s*)?(?:work\s*)?experience", re.I)
+EXP_BROAD_RE = re.compile(r"(?:experience|exp)[^\w]*(\d+)\+?\s*y", re.I)
 
 def extract_experience(text: str) -> Optional[int]:
     # Try explicit "X years of experience" first
-    m = EXP_EXPLICIT_RE.search(text)
+    m = EXP_EXPLICIT_RE.search(text) or EXP_BROAD_RE.search(text)
     if m:
         val = int(m.group(1))
         if 0 <= val <= 50:
@@ -252,6 +253,29 @@ def detect_sections(text: str) -> dict:
     sections[current_section] = "\n".join(current_lines).strip()
     return sections
 
+# ── Current Role Extraction ────────────────────────────────────
+
+def extract_current_role(text: str) -> str:
+    """Look for common job titles in the first 20 lines."""
+    lines = [l.strip() for l in text.split("\n") if l.strip()]
+    common_roles = [
+        "software engineer", "frontend developer", "backend developer",
+        "full stack developer", "data scientist", "product manager",
+        "ui/ux designer", "devops engineer", "qa engineer", "system administrator",
+        "business analyst", "project manager", "marketing manager", "sales representative",
+        "account executive", "designer", "developer", "engineer", "manager", "architect",
+        "consultant", "analyst", "director", "lead"
+    ]
+    for line in lines[:20]:
+        lower_line = line.lower()
+        if len(line) < 5 or len(line) > 60:
+            continue
+        for role in common_roles:
+            # We want to match whole words if possible, but simple 'in' works for a heuristic
+            if role in lower_line:
+                return line.strip()
+    return "Unknown Role"
+
 
 # ── Main Parse Pipeline ────────────────────────────────────────
 
@@ -268,6 +292,7 @@ def parse_resume(file_path: str) -> dict:
     cgpa = extract_cgpa(text)
     experience = extract_experience(text)
     college = extract_college(text)
+    current_role = extract_current_role(text)
     sections = detect_sections(text)
 
     return {
@@ -278,6 +303,7 @@ def parse_resume(file_path: str) -> dict:
         "years_of_experience": experience,
         "cgpa": cgpa,
         "college": college,
+        "current_role": current_role,
         "text": text,
         "sections": sections,
         "skill_count": len(skills),

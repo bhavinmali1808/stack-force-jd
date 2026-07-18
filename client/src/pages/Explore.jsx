@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, Trash2, Bell, Loader, X, Upload } from 'lucide-react';
 import { candidatesAPI } from '../api/index.js';
 import CandidateDetail from './CandidateDetail.jsx';
+import UploadModal from '../components/UploadModal.jsx';
 
 export default function Explore() {
   const [selectedIds, setSelectedIds] = useState([]);
@@ -11,6 +12,7 @@ export default function Explore() {
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [viewingCandidateId, setViewingCandidateId] = useState(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   // Fetch Company Candidates
   useEffect(() => {
@@ -73,26 +75,18 @@ export default function Explore() {
   };
 
   const handleBulkUpload = async (e) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    const formData = new FormData();
-    for (let f of files) formData.append('resumes', f);
-    
-    setLoading(true);
-    try {
-      await candidatesAPI.uploadGlobal(formData);
-      alert('Upload started! Resumes will be processed in the background.');
-      setTimeout(() => {
-        candidatesAPI.getAll().then(res => setCandidates(res.data.candidates || []));
-      }, 2000);
-    } catch (err) {
-      alert('Upload failed: ' + (err.response?.data?.message || err.message));
-    } finally {
-      setLoading(false);
-    }
+    // Legacy file input handler removed in favor of UploadModal
   };
 
   return (
+    <>
+      <UploadModal 
+        isOpen={uploadModalOpen} 
+        onClose={() => setUploadModalOpen(false)} 
+        onUploadComplete={() => {
+          candidatesAPI.getAll().then(res => setCandidates(res.data.candidates || []));
+        }} 
+      />
     <>
       <div className="main-header" style={{ padding: '0 2.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -100,18 +94,10 @@ export default function Explore() {
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <input 
-            type="file" 
-            id="global-upload" 
-            multiple 
-            accept=".zip,.pdf,.doc,.docx"
-            style={{ display: 'none' }}
-            onChange={handleBulkUpload}
-          />
           <button 
             className="btn btn-primary"
-            style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
-            onClick={() => document.getElementById('global-upload').click()}
+            style={{ padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', background: '#4F46E5', borderRadius: '8px', border: 'none', color: '#fff', fontWeight: 500 }}
+            onClick={() => setUploadModalOpen(true)}
           >
             <Upload size={16} /> Bulk Upload
           </button>
@@ -167,10 +153,10 @@ export default function Explore() {
                   <input type="checkbox" checked={displayCandidates.length > 0 && selectedIds.length === displayCandidates.length} onChange={toggleSelectAll} style={{ width: 16, height: 16 }} />
                 </th>
                 <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Name</th>
-                <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Role / Project</th>
+                <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Current Role</th>
                 <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Experience</th>
                 <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Location</th>
-                <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Status</th>
+                <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Tags</th>
               </tr>
             </thead>
             <tbody>
@@ -189,15 +175,6 @@ export default function Explore() {
                     No candidates found in your global dataset.
                   </td>
                 </tr>
-              ) : displayCandidates.map(candidate => {
-                const nameStr = candidate.name || 'Unknown Candidate';
-                const avatarUrl = candidate.avatar || `https://i.pravatar.cc/150?u=${candidate._id}`;
-                const titleStr = candidate.role?.title ? `Applied to: ${candidate.role.title}` : (candidate.title || 'Unknown Role');
-                const companyStr = candidate.company || 'Unknown Company';
-                const expStr = candidate.yearsOfExperience != null ? `${candidate.yearsOfExperience} yrs` : '-';
-                const locationStr = candidate.location || '-';
-                
-                return (
                   <tr 
                     key={candidate._id} 
                     style={{ borderBottom: '1px solid #E5E7EB', transition: 'background 0.2s', background: selectedIds.includes(candidate._id) ? '#F3F4F6' : 'transparent', cursor: 'pointer' }}
@@ -206,34 +183,39 @@ export default function Explore() {
                     }}
                   >
                     <td style={{ padding: '1rem 1.5rem' }}>
-                      <input type="checkbox" checked={selectedIds.includes(candidate._id)} onChange={() => toggleSelect(candidate._id)} style={{ width: 16, height: 16 }} />
+                      <input type="checkbox" checked={selectedIds.includes(candidate._id)} onChange={() => toggleSelect(candidate._id)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
                     </td>
                     <td style={{ padding: '1rem 1.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{ 
-                          width: 36, height: 36, borderRadius: '50%', background: '#4F46E5', color: '#fff',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'
+                          width: 32, height: 32, borderRadius: '50%', background: '#4F46E5', color: '#fff',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.85rem'
                         }}>
                           {nameStr[0]?.toUpperCase()}
                         </div>
-                        <span style={{ fontWeight: 600, color: '#111827', fontSize: '0.9rem' }}>{nameStr}</span>
+                        <div>
+                           <div style={{ fontWeight: 600, color: '#111827', fontSize: '0.9rem' }}>{nameStr}</div>
+                           <div style={{ fontSize: '0.8rem', color: '#6B7280' }}>{candidate.email || 'No email'}</div>
+                        </div>
                       </div>
                     </td>
                     <td style={{ padding: '1rem 1.5rem' }}>
-                      <div style={{ fontSize: '0.9rem', fontWeight: 500, color: '#111827' }}>{titleStr}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#6B7280' }}>{companyStr}</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#374151' }}>{candidate.currentRole || candidate.title || 'Unknown Role'}</div>
                     </td>
                     <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: '#4B5563' }}>
                       {expStr}
                     </td>
-                    <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: '#6B7280' }}>
                       {locationStr}
                     </td>
                     <td style={{ padding: '1rem 1.5rem' }}>
-                      <span className={`badge badge-${candidate.status === 'Rejected' ? 'red' : candidate.status === 'Shortlisted' ? 'green' : 'gray'}`}>
-                        {candidate.status}
-                      </span>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        {candidate.extractedSkills?.slice(0, 2).map((tag, i) => (
+                           <span key={i} style={{ background: '#EEF2FF', color: '#4F46E5', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, border: '1px solid #C7D2FE' }}>
+                             {tag}
+                           </span>
+                        )) || '-'}
+                      </div>
                     </td>
                   </tr>
                 );

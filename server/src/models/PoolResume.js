@@ -43,6 +43,7 @@ const poolResumeSchema = new mongoose.Schema(
     yearsOfExperience: { type: Number, default: null },
     cgpa: { type: Number, default: null },
     college: { type: String, default: '' },
+    currentRole: { type: String, default: 'Unknown Role' },
     sections: { type: Object, default: {} }, // detected resume sections
 
     // Processing status

@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { rolesAPI, candidatesAPI } from '../api/index.js';
 import CandidateCard from '../components/CandidateCard.jsx';
-import MatchBar from '../components/MatchBar.jsx';
 import AutoSuggestPanel from '../components/AutoSuggestPanel.jsx';
+import UploadModal from '../components/UploadModal.jsx';
 
 const STATUS_FILTERS = ['All', 'Applied', 'Shortlisted', 'Interview', 'Selected', 'Rejected'];
 
@@ -16,6 +16,8 @@ export default function RoleDetail() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [mustHaveOnly, setMustHaveOnly] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   const fetchCandidates = async (filters = {}) => {
     try {
@@ -58,8 +60,24 @@ export default function RoleDetail() {
   };
 
   const avgScore = candidates.length
-    ? Math.round(candidates.reduce((s, c) => s + c.matchScore, 0) / candidates.length)
+    ? Math.round(candidates.reduce((s, c) => s + (c.matchScore || 0), 0) / candidates.length)
     : 0;
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === candidates.length && candidates.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(candidates.map(c => c._id));
+    }
+  };
+
+  const toggleSelect = (id) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(i => i !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
 
   const highCount = candidates.filter((c) => c.matchScore >= 80).length;
   const midCount = candidates.filter((c) => c.matchScore >= 50 && c.matchScore < 80).length;
@@ -84,7 +102,13 @@ export default function RoleDetail() {
   }
 
   return (
-    <div className="page">
+    <>
+      <UploadModal 
+        isOpen={uploadModalOpen} 
+        onClose={() => setUploadModalOpen(false)} 
+        onUploadComplete={() => fetchCandidates({ search, status: statusFilter, mustHaveOnly })} 
+      />
+      <div className="page" style={{ padding: '2rem 2.5rem', backgroundColor: '#F8FAFC', minHeight: '100vh' }}>
       <div className="container">
         {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -105,12 +129,12 @@ export default function RoleDetail() {
             <Link to={`/roles/${id}/analytics`} className="btn btn-secondary btn-sm" style={{ color: 'var(--accent-light)', borderColor: 'var(--accent-light)' }}>
               📊 Analytics
             </Link>
-            <Link to={`/roles/${id}/edit`} className="btn btn-secondary btn-sm">
+            <Link to={`/roles/${id}/edit`} className="btn btn-secondary btn-sm" style={{ background: '#fff' }}>
               ✏️ Edit
             </Link>
-            <Link to={`/roles/${id}/upload`} className="btn btn-secondary btn-sm">
-              ⬆ Upload Resumes
-            </Link>
+            <button className="btn btn-primary btn-sm" style={{ background: '#4F46E5', color: '#fff', border: 'none' }} onClick={() => setUploadModalOpen(true)}>
+              ⬆ Bulk Upload
+            </button>
             <button className="btn btn-secondary btn-sm" onClick={() => handleExport('csv')} disabled={exporting || !candidates.length}>
               {exporting ? '...' : '⬇ CSV'}
             </button>
@@ -175,22 +199,88 @@ export default function RoleDetail() {
         {/* Auto-Suggest from Talent Pool */}
         <AutoSuggestPanel roleId={id} onCandidateAdded={fetchCandidates} />
 
-        {/* Candidates */}
+        {/* Candidates Table */}
         {candidates.length === 0 ? (
-          <div className="empty-state card">
+          <div className="empty-state card" style={{ background: '#fff', borderRadius: '12px' }}>
             <span className="empty-state-icon">👥</span>
             <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>No candidates match</p>
             <p style={{ fontSize: '0.875rem' }}>Upload resumes to start building your shortlist.</p>
-            <Link to={`/roles/${id}/upload`} className="btn btn-primary">⬆ Upload Resumes</Link>
+            <button onClick={() => setUploadModalOpen(true)} className="btn btn-primary">⬆ Bulk Upload</button>
           </div>
         ) : (
-          <div className="candidates-grid">
-            {candidates.map((c) => (
-              <CandidateCard key={c._id} candidate={c} roleId={id} />
-            ))}
+          <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #E5E7EB', background: '#F9FAFB' }}>
+                  <th style={{ padding: '1rem 1.5rem', width: '60px' }}>
+                    <input type="checkbox" checked={candidates.length > 0 && selectedIds.length === candidates.length} onChange={toggleSelectAll} style={{ width: 16, height: 16 }} />
+                  </th>
+                  <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Name</th>
+                  <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Current Role</th>
+                  <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Experience</th>
+                  <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Match Score</th>
+                  <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Location</th>
+                  <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#4B5563' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {candidates.map(candidate => {
+                  const nameStr = candidate.name || 'Unknown Candidate';
+                  const expStr = candidate.yearsOfExperience != null ? `${candidate.yearsOfExperience} yrs` : '-';
+                  const locationStr = candidate.location || '-';
+                  
+                  return (
+                    <tr 
+                      key={candidate._id} 
+                      style={{ borderBottom: '1px solid #E5E7EB', transition: 'background 0.2s', background: selectedIds.includes(candidate._id) ? '#F3F4F6' : 'transparent' }}
+                    >
+                      <td style={{ padding: '1rem 1.5rem' }}>
+                        <input type="checkbox" checked={selectedIds.includes(candidate._id)} onChange={() => toggleSelect(candidate._id)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+                      </td>
+                      <td style={{ padding: '1rem 1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div style={{ 
+                            width: 32, height: 32, borderRadius: '50%', background: '#4F46E5', color: '#fff',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.85rem'
+                          }}>
+                            {nameStr[0]?.toUpperCase()}
+                          </div>
+                          <div>
+                            <Link to={`/roles/${id}/candidates/${candidate._id}`} style={{ fontWeight: 600, color: '#111827', fontSize: '0.9rem', textDecoration: 'none' }}>{nameStr}</Link>
+                            <div style={{ fontSize: '0.8rem', color: '#6B7280' }}>{candidate.email || 'No email'}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '1rem 1.5rem' }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#374151' }}>{candidate.currentRole || candidate.title || 'Unknown Role'}</div>
+                      </td>
+                      <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: '#4B5563' }}>
+                        {expStr}
+                      </td>
+                      <td style={{ padding: '1rem 1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                           <div style={{ width: 60, height: 6, background: '#E5E7EB', borderRadius: 999, overflow: 'hidden' }}>
+                              <div style={{ width: `${candidate.matchScore || 0}%`, height: '100%', background: (candidate.matchScore >= 80 ? '#10B981' : candidate.matchScore >= 50 ? '#F59E0B' : '#EF4444') }} />
+                           </div>
+                           <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>{candidate.matchScore || 0}%</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: '#6B7280' }}>
+                        {locationStr}
+                      </td>
+                      <td style={{ padding: '1rem 1.5rem' }}>
+                        <span className={`badge badge-${candidate.status === 'Rejected' ? 'red' : candidate.status === 'Shortlisted' ? 'green' : 'gray'}`}>
+                          {candidate.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

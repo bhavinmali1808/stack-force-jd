@@ -101,6 +101,10 @@ const candidateSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    currentRole: {
+      type: String,
+      default: 'Unknown Role',
+    },
     // Phase 2: flag if any must-have skills are missing (for UI warning)
     hasMissingMustHave: {
       type: Boolean,

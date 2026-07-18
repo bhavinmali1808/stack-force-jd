@@ -223,9 +223,11 @@ export default function EmailAccounts() {
                   </ol>
                 </div>
 
-                <button style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.7rem', border: '1px solid #C7D2FE', background: '#fff', borderRadius: '6px', color: '#5C67ED', fontWeight: 600, marginBottom: '1.5rem', cursor: 'pointer' }}>
-                  Open Google App Passwords <ExternalLink size={16} />
-                </button>
+                <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                  <button style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.7rem', border: '1px solid #C7D2FE', background: '#fff', borderRadius: '6px', color: '#5C67ED', fontWeight: 600, marginBottom: '1.5rem', cursor: 'pointer' }}>
+                    Open Google App Passwords <ExternalLink size={16} />
+                  </button>
+                </a>
 
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label style={{ display: 'block', fontSize: '0.85rem', color: '#6B7280', marginBottom: '0.4rem', fontWeight: 500 }}>App password</label>
