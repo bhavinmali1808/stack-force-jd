@@ -3,21 +3,21 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { candidatesAPI, rolesAPI } from '../api/index.js';
 import { ExternalLink, MessageSquare, Briefcase, GraduationCap, MapPin, Mail, Phone, FileText, ArrowLeft, Send } from 'lucide-react';
 
-export default function CandidateDetail({ candidateId, roleIdProp, onClose }) {
+export default function CandidateDetail({ candidateId, roleIdProp, onClose, initialCandidate }) {
   const { id: roleIdParam, cid } = useParams();
   const navigate = useNavigate();
   const roleId = roleIdProp || roleIdParam;
   const targetCid = candidateId || cid;
   
-  const [candidate, setCandidate] = useState(null);
-  const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [candidate, setCandidate] = useState(initialCandidate || null);
+  const [role, setRole] = useState(initialCandidate?.role && typeof initialCandidate.role === 'object' ? initialCandidate.role : null);
+  const [loading, setLoading] = useState(!initialCandidate);
   const [activeTab, setActiveTab] = useState('Overview');
   const [savingStatus, setSavingStatus] = useState(false);
 
   useEffect(() => {
     if (!targetCid) return;
-    setLoading(true);
+    if (!initialCandidate) setLoading(true);
     Promise.all([
       candidatesAPI.get(targetCid),
       roleId ? rolesAPI.get(roleId) : Promise.resolve({ data: { role: null } }),
@@ -25,7 +25,7 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose }) {
       .then(([cRes, rRes]) => {
         setCandidate(cRes.data.candidate);
         if (rRes.data.role) setRole(rRes.data.role);
-        else if (cRes.data.candidate.role) setRole(cRes.data.candidate.role);
+        else if (cRes.data.candidate.role && typeof cRes.data.candidate.role === 'object') setRole(cRes.data.candidate.role);
       })
       .catch(console.error)
       .finally(() => setLoading(false));

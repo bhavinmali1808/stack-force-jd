@@ -28,8 +28,13 @@ from typing import Optional
 
 import pdfplumber
 import docx
+from flashtext import KeywordProcessor
 
 from skills import SKILL_DICTIONARY
+
+# Initialize Flashtext for O(N) multi-keyword extraction
+skill_processor = KeywordProcessor(case_sensitive=False)
+skill_processor.add_keywords_from_list(SKILL_DICTIONARY)
 
 
 # ── Text Extraction ────────────────────────────────────────────
@@ -199,21 +204,12 @@ def extract_college(text: str) -> str:
 
 def extract_skills(text: str) -> list:
     """
-    Case-insensitive whole-word boundary matching against SKILL_DICTIONARY.
-    Handles multi-word skills (e.g. "machine learning", "react native").
+    O(N) extraction using FlashText (Aho-Corasick algorithm).
+    Handles multi-word skills and whole-word boundaries efficiently.
     """
-    normalized = text.lower()
-    found = set()
-
-    for skill in SKILL_DICTIONARY:
-        # Escape special regex chars in skill name
-        escaped = re.escape(skill)
-        # Whole-word boundary: not preceded/followed by alphanumeric
-        pattern = re.compile(r"(?<![a-z0-9])" + escaped + r"(?![a-z0-9])", re.I)
-        if pattern.search(normalized):
-            found.add(skill)
-
-    return sorted(found)
+    # Flashtext handles case-insensitivity natively since we initialized it with case_sensitive=False
+    found = skill_processor.extract_keywords(text)
+    return sorted(set(found))
 
 
 # ── Section Detection ──────────────────────────────────────────

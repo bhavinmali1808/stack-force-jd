@@ -11,7 +11,7 @@ Endpoints:
 
 import asyncio
 import os
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from typing import List
 
 from fastapi import FastAPI, HTTPException
@@ -34,8 +34,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Thread pool for CPU-bound PDF parsing (keeps async event loop unblocked)
-executor = ThreadPoolExecutor(max_workers=8)
+# Process pool for CPU-bound PDF parsing (bypasses GIL for true multi-core speedup)
+# Scale workers to actual CPU count — avoids resource thrashing on small hosts (e.g. Railway free tier)
+_CPU_COUNT = os.cpu_count() or 2
+executor = ProcessPoolExecutor(max_workers=_CPU_COUNT)
 
 
 # ── Request/Response Models ────────────────────────────────────
@@ -69,7 +71,7 @@ async def parse_single(req: ParseRequest):
     if not os.path.exists(req.filePath):
         raise HTTPException(status_code=404, detail=f"File not found: {req.filePath}")
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     try:
         result = await loop.run_in_executor(executor, parse_resume, req.filePath)
         return {"success": True, "data": result}
@@ -86,7 +88,7 @@ async def parse_batch(req: BatchParseRequest):
     if not req.filePaths:
         raise HTTPException(status_code=400, detail="filePaths cannot be empty")
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
 
     async def parse_one(file_path: str):
         if not os.path.exists(file_path):

@@ -260,7 +260,7 @@ const getAllCompanyCandidates = async (req, res) => {
  * GET /api/candidates/:id
  */
 const getCandidateById = async (req, res) => {
-  const candidate = await Candidate.findOne({ _id: req.params.id, company: req.company._id });
+  const candidate = await Candidate.findOne({ _id: req.params.id, company: req.company._id }).populate('role', 'title');
   if (!candidate) return res.status(404).json({ success: false, message: 'Candidate not found.' });
   res.json({ success: true, candidate });
 };

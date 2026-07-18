@@ -262,6 +262,7 @@ export default function Explore() {
         {viewingCandidateId && (
           <CandidateDetail 
             candidateId={viewingCandidateId} 
+            initialCandidate={candidates.find(c => c._id === viewingCandidateId)}
             onClose={() => setViewingCandidateId(null)} 
           />
         )}
