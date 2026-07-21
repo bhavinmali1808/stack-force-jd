@@ -69,8 +69,13 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
   }
 
   const nameStr = candidate.name || 'Unknown Candidate';
-  const titleStr = candidate.title || (role?.title ? `Applied to: ${role.title}` : 'Unknown Role');
-  const companyStr = candidate.company || 'Previous Company';
+  const titleStr = candidate.title || (role?.title ? `Applied to: ${role.title}` : '');
+  // candidate.company is an ObjectId ref — only show if it's a human-readable string
+  const isObjectId = (v) => typeof v === 'string' && /^[a-f0-9]{24}$/i.test(v);
+  const companyStr = candidate.company && !isObjectId(candidate.company)
+    ? candidate.company
+    : (role?.title || '');
+
   const locationStr = candidate.location || 'Remote';
   const avatarUrl = candidate.avatar || `https://i.pravatar.cc/150?u=${candidate._id}`;
 
