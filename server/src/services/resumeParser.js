@@ -31,18 +31,39 @@ const extractText = async (filePath) => {
 
 
 /**
- * Naive name/email/phone extraction from text.
+ * Extract name, email, phone from raw text.
+ * Improved name heuristic — skips section headers, URLs, lines with too many digits.
  */
+const SECTION_HEADERS = new Set([
+  'resume', 'curriculum vitae', 'cv', 'objective', 'summary', 'profile',
+  'contact', 'phone', 'email', 'address', 'skills', 'experience',
+  'education', 'projects', 'certifications', 'references', 'overview',
+]);
+
 const extractMeta = (text) => {
   const emailMatch = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
   const phoneMatch = text.match(/(\+?[\d\s\-().]{10,15})/);
 
-  // Try to get the first non-empty line as name (heuristic)
+  // Look through top 10 non-empty lines for the candidate name.
+  // A name line is typically short, has no @ or URLs, isn't a section header,
+  // and doesn't start with a digit or common label.
   const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
-  const nameLine = lines.find((l) => l.length > 2 && l.length < 60 && !/[@\d]/.test(l));
+  let nameLine = 'Unknown';
+  for (const line of lines.slice(0, 10)) {
+    if (line.length < 2 || line.length > 60) continue;              // too short or too long
+    if (/@|http|www\.|linkedin|github/i.test(line)) continue;       // URL / email
+    if (/^\d/.test(line)) continue;                                  // starts with digit
+    if (/\d{5,}/.test(line)) continue;                              // mostly numbers
+    if (SECTION_HEADERS.has(line.toLowerCase().replace(/:$/, ''))) continue; // header keyword
+    if (/[|•·|►▸▶→\[\]{}<>]/.test(line)) continue;                // bullet/symbol lines
+    // Must contain at least one letter word (not just punctuation)
+    if (!/[a-zA-Z]{2,}/.test(line)) continue;
+    nameLine = line;
+    break;
+  }
 
   return {
-    name: nameLine || 'Unknown',
+    name: nameLine,
     email: emailMatch ? emailMatch[0] : '',
     phone: phoneMatch ? phoneMatch[0].trim() : '',
   };
@@ -107,18 +128,46 @@ const extractCollege = (text) => {
 };
 
 /**
+ * Extract the candidate's current/most-recent job title from the first 20 lines.
+ * Mirrors the Python parser's extract_current_role() logic.
+ */
+const COMMON_ROLES = [
+  'software engineer', 'frontend developer', 'backend developer',
+  'full stack developer', 'data scientist', 'product manager',
+  'ui/ux designer', 'devops engineer', 'qa engineer', 'system administrator',
+  'business analyst', 'project manager', 'marketing manager', 'sales representative',
+  'account executive', 'designer', 'developer', 'engineer', 'manager', 'architect',
+  'consultant', 'analyst', 'director', 'lead',
+];
+
+const extractCurrentRole = (text) => {
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  for (const line of lines.slice(0, 20)) {
+    if (line.length < 5 || line.length > 60) continue;
+    const lower = line.toLowerCase();
+    if (COMMON_ROLES.some((role) => lower.includes(role))) return line;
+  }
+  return 'Unknown Role';
+};
+
+/**
  * Extract skills from text using the skill dictionary.
+ * Fast single-pass: normalise text once, then check each skill with simple includes().
+ * No RegExp rebuild per skill — avoids O(skills * textLen) cost.
  */
 const extractSkillsFromText = (text) => {
-  const normalizedText = text.toLowerCase();
+  const normalizedText = ` ${text.toLowerCase()} `; // pad for boundary matching
   const found = new Set();
 
   for (const skill of SKILL_DICTIONARY) {
-    const escaped = skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(?<![a-z0-9])${escaped}(?![a-z0-9])`, 'i');
-    if (regex.test(normalizedText)) {
-      found.add(skill);
-    }
+    const s = skill.toLowerCase();
+    // Simple word-boundary check: surround with non-alphanumeric chars
+    const idx = normalizedText.indexOf(s);
+    if (idx === -1) continue;
+    const before = normalizedText[idx - 1];
+    const after = normalizedText[idx + s.length];
+    if (/[a-z0-9]/.test(before) || /[a-z0-9]/.test(after)) continue;
+    found.add(skill);
   }
 
   return Array.from(found);
@@ -126,7 +175,7 @@ const extractSkillsFromText = (text) => {
 
 /**
  * Full resume parsing pipeline.
- * Returns: { text, name, email, phone, extractedSkills, cgpa, yearsOfExperience, college }
+ * Returns: { text, name, email, phone, extractedSkills, cgpa, yearsOfExperience, college, currentRole }
  */
 const parseResume = async (filePath) => {
   const text = await extractText(filePath);
@@ -135,8 +184,10 @@ const parseResume = async (filePath) => {
   const cgpa = extractCGPA(text);
   const yearsOfExperience = extractExperience(text);
   const college = extractCollege(text);
+  const currentRole = extractCurrentRole(text);
 
-  return { text, name, email, phone, extractedSkills, cgpa, yearsOfExperience, college };
+  return { text, name, email, phone, extractedSkills, cgpa, yearsOfExperience, college, currentRole };
 };
 
 module.exports = { parseResume, extractSkillsFromText, extractText };
+

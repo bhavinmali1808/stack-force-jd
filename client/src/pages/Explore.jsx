@@ -178,7 +178,11 @@ export default function Explore() {
               ) : displayCandidates.map(candidate => {
                   const nameStr = candidate.name || 'Unknown Candidate';
                   const avatarUrl = candidate.avatar || `https://i.pravatar.cc/150?u=${candidate._id}`;
-                  const companyStr = candidate.company || 'Unknown Company';
+                  // candidate.company is a MongoDB ObjectId ref — never display raw.
+                  // Show the role title as the "company context" if available.
+                  const companyStr = (candidate.role && typeof candidate.role === 'object' && candidate.role.title)
+                    ? candidate.role.title
+                    : '';
                   
                   let expStr = '-';
                   if (candidate.yearsOfExperience != null) {
@@ -208,8 +212,8 @@ export default function Explore() {
                         </div>
                       </td>
                       <td style={{ padding: '1rem 1.5rem' }}>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827' }}>{candidate.currentRole || candidate.title || 'Unknown Role'}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#6B7280' }}>{companyStr}</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827' }}>{candidate.currentRole || candidate.title || '—'}</div>
+                        {companyStr && <div style={{ fontSize: '0.8rem', color: '#6B7280' }}>{companyStr}</div>}
                       </td>
                       <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: '#4B5563' }}>
                         {expStr}

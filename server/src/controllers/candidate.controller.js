@@ -28,6 +28,7 @@ const processSingleResume = async (filePath, originalname, filename, role, compa
       college,
       linkedin = '',
       github = '',
+      currentRole = '',
     } = await parseResume(filePath);
 
     // ── Rule-based scoring ───────────────────────────────────
@@ -60,6 +61,7 @@ const processSingleResume = async (filePath, originalname, filename, role, compa
       cgpa,
       yearsOfExperience,
       college,
+      currentRole,
       linkedinUrl: linkedin,
       githubUrl: github,
       // aiScore, aiSummary, aiReasoning left as null (AI disabled)
