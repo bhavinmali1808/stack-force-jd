@@ -7,6 +7,11 @@
   },
   "scripts": {
     "build": "cd server && npm install",
-    "start": "cd server && npm start"
+    "start": "cd server && npm start",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4.112.0"
   }
 }
