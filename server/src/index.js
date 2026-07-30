@@ -22,6 +22,7 @@ const queueRoutes = require('./routes/queue.routes');
 const poolRoutes = require('./routes/pool.routes');
 const skillsRoutes = require('./routes/skills.routes');
 const publicRoutes = require('./routes/public.routes');
+const emailerRoutes = require('./routes/emailer.routes');
 const { errorHandler } = require('./middleware/error.middleware');
 const { startPoolWorker } = require('./workers/poolWorkerInline');
 const { startResumeWorker } = require('./workers/resumeWorkerInline');

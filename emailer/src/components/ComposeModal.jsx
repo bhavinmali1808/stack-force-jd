@@ -1,193 +1,143 @@
 import React, { useState } from 'react';
-import {
-  X,
-  Maximize2,
-  Minimize2,
-  Paperclip,
-  Smile,
-  Send,
-  Calendar,
-  Sparkles,
-  ChevronDown,
-  Info,
-} from 'lucide-react';
-import styles from './ComposeModal.module.css';
+import { Send, X, User, ChevronDown } from 'lucide-react';
 
-const ComposeModal = ({
-  isOpen,
-  onClose,
-  selectedContacts = [],
-  quota,
-  templates = [],
-  onSend,
-}) => {
+export default function ComposeModal({ isOpen, onClose, selectedContacts = [], quota, templates = [], onSend }) {
   const [subject, setSubject] = useState('');
-  const [body, setBody] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [bodyHtml, setBodyHtml] = useState('');
+  const [category, setCategory] = useState('outreach');
+  const [templateId, setTemplateId] = useState('');
+  const [sending, setSending] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSelectTemplate = (e) => {
-    const tempId = e.target.value;
-    setSelectedTemplate(tempId);
-    const temp = templates.find((t) => t._id === tempId);
-    if (temp) {
-      setSubject(temp.subject);
-      setBody(temp.bodyHtml.replace(/<p>/g, '').replace(/<\/p>/g, '\n\n'));
+  const applyTemplate = (id) => {
+    const t = templates.find(t => t._id === id || t._id?.toString() === id);
+    if (t) {
+      setSubject(t.subject);
+      setBodyHtml(t.bodyHtml);
+      setCategory(t.category || 'outreach');
+    }
+    setTemplateId(id);
+  };
+
+  const handleSend = async () => {
+    if (!subject || !bodyHtml) return;
+    setSending(true);
+    try {
+      await onSend({
+        recipients: selectedContacts.map(c => ({ email: c.email, name: c.name })),
+        subject,
+        bodyHtml,
+        category,
+      });
+    } finally {
+      setSending(false);
     }
   };
 
-  const insertVariable = (variableTag) => {
-    setBody((prev) => prev + ` ${variableTag} `);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSend({
-      recipients: selectedContacts,
-      subject,
-      bodyHtml: `<p>${body.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`,
-    });
-  };
+  const remaining = quota?.remaining ?? 999;
+  const overQuota = typeof remaining === 'number' && selectedContacts.length > remaining;
 
   return (
-    <div className={`${styles.overlay} ${isExpanded ? styles.expanded : ''}`}>
-      <div className={styles.container}>
-        {/* Top Header */}
-        <div className={styles.header}>
-          <div className={styles.titleGroup}>
-            <span className={styles.title}>New email</span>
-            {quota && (
-              <span className={styles.quotaBadge}>
-                {quota.remaining} / {quota.dailyLimit} remaining today
-              </span>
-            )}
-          </div>
-          <div className={styles.headerActions}>
-            <button
-              className={styles.iconBtn}
-              onClick={() => setIsExpanded(!isExpanded)}
-              title={isExpanded ? 'Minimize' : 'Maximize'}
-            >
-              {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-            </button>
-            <button className={styles.iconBtn} onClick={onClose} title="Close">
-              <X size={16} />
-            </button>
-          </div>
+    <div className="modal-overlay">
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <span className="modal-title">✉️ Compose Email</span>
+          <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
-        {/* Compose Form */}
-        <form onSubmit={handleSubmit} className={styles.form}>
-          {/* From row */}
-          <div className={styles.row}>
-            <label className={styles.label}>From</label>
-            <div className={styles.senderPill}>
-              <div className={styles.avatar}>DS</div>
-              <span className={styles.senderName}>Hiring Team</span>
-              <span className={styles.senderEmail}>hr@company.com</span>
+        <div className="modal-body">
+          {/* Recipients */}
+          <div className="form-group">
+            <label className="form-label">To ({selectedContacts.length} contacts)</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 10px', background: 'var(--color-surface-2)', border: '1px solid var(--color-border-2)', borderRadius: 'var(--radius-md)', maxHeight: 80, overflowY: 'auto' }}>
+              {selectedContacts.map(c => (
+                <span key={c.id || c._id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(99,102,241,0.12)', color: '#a78bfa', padding: '2px 8px', borderRadius: 999, fontSize: 12 }}>
+                  <User size={10} />
+                  {c.name || c.email}
+                </span>
+              ))}
             </div>
           </div>
 
-          {/* To row with recipient count pill matching screenshot */}
-          <div className={styles.row}>
-            <label className={styles.label}>To</label>
-            <div className={styles.recipientPillGroup}>
-              <div className={styles.avatarStack}>
-                {selectedContacts.slice(0, 3).map((c, i) => (
-                  <div key={i} className={styles.stackedAvatar}>
-                    {c.name ? c.name[0].toUpperCase() : 'C'}
-                  </div>
-                ))}
-              </div>
-              <span className={styles.recipientPill}>
-                Sending email to {selectedContacts.length} recipient{selectedContacts.length === 1 ? '' : 's'}
-              </span>
-            </div>
+          {/* Template selector */}
+          <div className="form-group">
+            <label className="form-label">Load Template</label>
+            <select className="form-select" value={templateId} onChange={e => applyTemplate(e.target.value)}>
+              <option value="">— Choose template or compose below —</option>
+              {templates.map(t => (
+                <option key={t._id} value={t._id}>{t.name}</option>
+              ))}
+            </select>
           </div>
 
-          {/* Subject row */}
-          <div className={styles.row}>
+          {/* Category */}
+          <div className="form-group">
+            <label className="form-label">Category</label>
+            <select className="form-select" value={category} onChange={e => setCategory(e.target.value)}>
+              <option value="outreach">Outreach</option>
+              <option value="interview">Interview</option>
+              <option value="marketing">Marketing</option>
+              <option value="welcome">Welcome</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+
+          {/* Subject */}
+          <div className="form-group">
+            <label className="form-label">Subject *</label>
             <input
-              type="text"
-              placeholder="Type subject here..."
+              className="form-input"
+              placeholder="Use {{name}}, {{company}} for personalization"
               value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              className={styles.subjectInput}
-              required
+              onChange={e => setSubject(e.target.value)}
             />
           </div>
 
-          {/* Variable pills row */}
-          <div className={styles.variableBar}>
-            <span className={styles.variableHint}>Insert Tag:</span>
-            <button
-              type="button"
-              className={styles.variablePill}
-              onClick={() => insertVariable('{{name}}')}
-            >
-              First name
-            </button>
-            <button
-              type="button"
-              className={styles.variablePill}
-              onClick={() => insertVariable('{{company}}')}
-            >
-              Company name
-            </button>
-          </div>
-
-          {/* Editor Textarea */}
-          <div className={styles.editorContainer}>
+          {/* Body */}
+          <div className="form-group">
+            <label className="form-label">Body (HTML) *</label>
             <textarea
-              className={styles.textarea}
-              placeholder="Write your email message..."
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              required
+              className="form-textarea"
+              style={{ minHeight: 180, fontFamily: 'monospace', fontSize: 12 }}
+              placeholder="<p>Hi <strong>{{name}}</strong>,</p>..."
+              value={bodyHtml}
+              onChange={e => setBodyHtml(e.target.value)}
             />
-          </div>
-
-          {/* Bottom Bar matching screenshot */}
-          <div className={styles.footer}>
-            <div className={styles.footerLeft}>
-              <select
-                className={styles.templateSelect}
-                value={selectedTemplate}
-                onChange={handleSelectTemplate}
-              >
-                <option value="">Use template...</option>
-                {templates.map((t) => (
-                  <option key={t._id} value={t._id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-              <button type="button" className={styles.toolBtn}>
-                <Paperclip size={16} />
-              </button>
-              <button type="button" className={styles.toolBtn}>
-                <Smile size={16} />
-              </button>
-            </div>
-
-            <div className={styles.footerRight}>
-              <button type="button" className={styles.deleteBtn} onClick={onClose}>
-                Delete
-              </button>
-              <button type="button" className={styles.sendLaterBtn}>
-                <Calendar size={14} /> Send later
-              </button>
-              <button type="submit" className={styles.sendBtn}>
-                Send
-              </button>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>
+              Variables: {'{{name}}'} {'{{company}}'} {'{{jobTitle}}'}
             </div>
           </div>
-        </form>
+
+          {overQuota && (
+            <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: 12, color: 'var(--color-danger)' }}>
+              ⚠️ You've selected {selectedContacts.length} recipients but only have {remaining} emails remaining today.
+            </div>
+          )}
+
+          {quota && (
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textAlign: 'right' }}>
+              Quota: {quota.sentCount}/{quota.dailyLimit} used · {remaining} remaining today
+            </div>
+          )}
+        </div>
+
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button
+            className="btn btn-primary"
+            disabled={!subject || !bodyHtml || sending || overQuota}
+            onClick={handleSend}
+            style={{ minWidth: 120 }}
+          >
+            {sending ? (
+              <><span style={{ animation: 'spin 0.8s linear infinite', display: 'inline-block' }}>⟳</span> Sending...</>
+            ) : (
+              <><Send size={13} /> Send to {selectedContacts.length}</>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
-};
-
-export default ComposeModal;
+}
