@@ -4,6 +4,7 @@ import {
   Settings, Mail, ChevronRight, LogOut, Zap
 } from 'lucide-react';
 import api from './api';
+import store from './store/emailerStore';
 import Dashboard from './pages/Dashboard';
 import Contacts from './pages/Contacts';
 import Campaigns from './pages/Campaigns';
@@ -40,9 +41,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    api.get('/emailer/quota')
-      .then(r => { if (r.data.success) setQuota(r.data); })
-      .catch(() => setQuota({ sentCount: 2, dailyLimit: 10, remaining: 8 }));
+    store.quota.get().then(q => setQuota(q));
   }, [activePage]);
 
   const PageComponent = PAGES[activePage] || Dashboard;
@@ -117,21 +116,32 @@ export default function App() {
           <div className="quota-bar-container">
             <div className="quota-label">
               <span>Daily Quota</span>
-              <span style={{ color: usedPct > 80 ? 'var(--color-warning)' : 'var(--color-text-2)' }}>
-                {quota.sentCount}/{typeof quota.dailyLimit === 'number' ? quota.dailyLimit : '∞'}
-              </span>
+              {quota.isUnlimited ? (
+                <span style={{ color: 'var(--color-success)', fontWeight: 700 }}>∞ Unlimited</span>
+              ) : (
+                <span style={{ color: usedPct > 80 ? 'var(--color-warning)' : 'var(--color-text-2)' }}>
+                  {quota.sentCount}/{typeof quota.dailyLimit === 'number' ? quota.dailyLimit : '∞'}
+                </span>
+              )}
             </div>
-            <div className="quota-bar">
-              <div
-                className="quota-bar-fill"
-                style={{
-                  width: `${usedPct}%`,
-                  background: usedPct > 80
-                    ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
-                    : undefined,
-                }}
-              />
-            </div>
+            {quota.isUnlimited ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                <div style={{ flex: 1, height: 4, borderRadius: 999, background: 'linear-gradient(90deg, #10b981, #34d399)', opacity: 0.7 }} />
+                <span style={{ fontSize: 10, color: 'var(--color-success)', fontWeight: 700 }}>ADMIN</span>
+              </div>
+            ) : (
+              <div className="quota-bar">
+                <div
+                  className="quota-bar-fill"
+                  style={{
+                    width: `${usedPct}%`,
+                    background: usedPct > 80
+                      ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+                      : undefined,
+                  }}
+                />
+              </div>
+            )}
           </div>
         )}
 

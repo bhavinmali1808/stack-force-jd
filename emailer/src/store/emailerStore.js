@@ -275,7 +275,8 @@ const quotaStore = {
     } catch {}
     const saved = lsGet(LS_KEYS.quota);
     if (saved) return saved;
-    return { sentCount: 0, dailyLimit: 10, remaining: 10, date: new Date().toISOString().split('T')[0] };
+    // Demo fallback: treat as unlimited (no backend = dev/admin mode)
+    return { sentCount: 0, dailyLimit: 'Unlimited', remaining: 999999, isUnlimited: true, date: new Date().toISOString().split('T')[0] };
   },
 };
 

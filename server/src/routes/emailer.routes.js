@@ -199,15 +199,17 @@ router.get('/contacts', protect, async (req, res) => {
 
 router.get('/quota', protect, async (req, res) => {
   try {
-    const isSuperAdmin = req.user.role === 'superadmin';
+    // Admins & superadmins have unlimited quota — only HR company accounts are rate-limited
+    const isUnlimited = ['admin', 'superadmin'].includes(req.user.role);
     const quota = await getOrCreateQuota(req.user._id);
-    const remaining = isSuperAdmin ? 999999 : Math.max(0, quota.dailyLimit - quota.sentCount);
+    const remaining = isUnlimited ? 999999 : Math.max(0, quota.dailyLimit - quota.sentCount);
 
     res.json({
       success: true,
       sentCount: quota.sentCount,
-      dailyLimit: isSuperAdmin ? 'Unlimited' : quota.dailyLimit,
+      dailyLimit: isUnlimited ? 'Unlimited' : quota.dailyLimit,
       remaining,
+      isUnlimited,
       date: getTodayString(),
     });
   } catch (err) {
@@ -221,7 +223,8 @@ router.get('/quota', protect, async (req, res) => {
 router.post('/send', protect, async (req, res) => {
   try {
     const { recipients, subject, bodyHtml, category = 'outreach' } = req.body;
-    const isSuperAdmin = req.user.role === 'superadmin';
+    // Admins & superadmins bypass quota — only HR company accounts are rate-limited
+    const isUnlimited = ['admin', 'superadmin'].includes(req.user.role);
 
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return res.status(400).json({ success: false, message: 'At least one recipient is required' });
@@ -231,7 +234,7 @@ router.post('/send', protect, async (req, res) => {
     }
 
     const quota = await getOrCreateQuota(req.user._id);
-    if (!isSuperAdmin && quota.sentCount + recipients.length > quota.dailyLimit) {
+    if (!isUnlimited && quota.sentCount + recipients.length > quota.dailyLimit) {
       const remaining = Math.max(0, quota.dailyLimit - quota.sentCount);
       return res.status(429).json({
         success: false,
@@ -267,16 +270,18 @@ router.post('/send', protect, async (req, res) => {
       )
     );
 
-    // Update quota
-    quota.sentCount += successCount;
-    await quota.save();
+    // Only increment quota counter for limited (HR) users
+    if (!isUnlimited) {
+      quota.sentCount += successCount;
+      await quota.save();
+    }
 
     res.json({
       success: true,
       message: `Processed ${results.length} email(s) — ${successCount} sent`,
       successCount,
       failedCount: results.length - successCount,
-      quotaRemaining: isSuperAdmin ? 'Unlimited' : Math.max(0, quota.dailyLimit - quota.sentCount),
+      quotaRemaining: isUnlimited ? 'Unlimited' : Math.max(0, quota.dailyLimit - quota.sentCount),
       results,
     });
   } catch (err) {
@@ -383,9 +388,10 @@ router.post('/campaigns', protect, async (req, res) => {
       return res.status(400).json({ success: false, message: 'At least one recipient required' });
     }
 
-    const isSuperAdmin = req.user.role === 'superadmin';
+    // Admins & superadmins bypass quota — only HR company accounts are rate-limited
+    const isUnlimited = ['admin', 'superadmin'].includes(req.user.role);
     const quota = await getOrCreateQuota(req.user._id);
-    if (!isSuperAdmin && quota.sentCount + recipients.length > quota.dailyLimit) {
+    if (!isUnlimited && quota.sentCount + recipients.length > quota.dailyLimit) {
       return res.status(429).json({
         success: false,
         message: `Daily limit exceeded. ${Math.max(0, quota.dailyLimit - quota.sentCount)} emails remaining today.`,
@@ -435,9 +441,11 @@ router.post('/campaigns', protect, async (req, res) => {
     campaign.sentAt = new Date();
     await campaign.save();
 
-    // Update quota
-    quota.sentCount += successCount;
-    await quota.save();
+    // Only increment quota counter for limited (HR) users
+    if (!isUnlimited) {
+      quota.sentCount += successCount;
+      await quota.save();
+    }
 
     res.status(201).json({
       success: true,
