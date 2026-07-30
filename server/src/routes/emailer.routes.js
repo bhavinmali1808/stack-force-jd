@@ -22,7 +22,11 @@
 
 const express = require('express');
 const router = express.Router();
-const protect = require('../middleware/auth.middleware');
+const { protect } = require('../middleware/auth.middleware');
+
+// Alias middleware: auth.middleware sets req.company; emailer uses req.user
+const withUser = (req, res, next) => { if (req.company) req.user = req.company; next(); };
+const auth = [protect, withUser];
 const Candidate = require('../models/Candidate');
 const PoolResume = require('../models/PoolResume');
 const EmailQuota = require('../models/EmailQuota');
@@ -130,7 +134,7 @@ const DEFAULT_TEMPLATES = [
 
 // ─── GET /api/emailer/contacts ────────────────────────────────────────────────
 
-router.get('/contacts', protect, async (req, res) => {
+router.get('/contacts', ...auth, async (req, res) => {
   try {
     const companyId = req.user._id;
     const { search, skill, source } = req.query;
@@ -197,7 +201,7 @@ router.get('/contacts', protect, async (req, res) => {
 
 // ─── GET /api/emailer/quota ───────────────────────────────────────────────────
 
-router.get('/quota', protect, async (req, res) => {
+router.get('/quota', ...auth, async (req, res) => {
   try {
     // Admins & superadmins have unlimited quota — only HR company accounts are rate-limited
     const isUnlimited = ['admin', 'superadmin'].includes(req.user.role);
@@ -220,7 +224,7 @@ router.get('/quota', protect, async (req, res) => {
 
 // ─── POST /api/emailer/send ───────────────────────────────────────────────────
 
-router.post('/send', protect, async (req, res) => {
+router.post('/send', ...auth, async (req, res) => {
   try {
     const { recipients, subject, bodyHtml, category = 'outreach' } = req.body;
     // Admins & superadmins bypass quota — only HR company accounts are rate-limited
@@ -292,7 +296,7 @@ router.post('/send', protect, async (req, res) => {
 
 // ─── GET /api/emailer/templates ──────────────────────────────────────────────
 
-router.get('/templates', protect, async (req, res) => {
+router.get('/templates', ...auth, async (req, res) => {
   try {
     const customTemplates = await EmailTemplate.find({ company: req.user._id }).lean();
     const templates = [
@@ -308,7 +312,7 @@ router.get('/templates', protect, async (req, res) => {
 
 // ─── POST /api/emailer/templates ─────────────────────────────────────────────
 
-router.post('/templates', protect, async (req, res) => {
+router.post('/templates', ...auth, async (req, res) => {
   try {
     const { name, subject, bodyHtml, category = 'custom' } = req.body;
     if (!name || !subject || !bodyHtml) {
@@ -330,7 +334,7 @@ router.post('/templates', protect, async (req, res) => {
 
 // ─── PUT /api/emailer/templates/:id ──────────────────────────────────────────
 
-router.put('/templates/:id', protect, async (req, res) => {
+router.put('/templates/:id', ...auth, async (req, res) => {
   try {
     const template = await EmailTemplate.findOneAndUpdate(
       { _id: req.params.id, company: req.user._id },
@@ -347,7 +351,7 @@ router.put('/templates/:id', protect, async (req, res) => {
 
 // ─── DELETE /api/emailer/templates/:id ───────────────────────────────────────
 
-router.delete('/templates/:id', protect, async (req, res) => {
+router.delete('/templates/:id', ...auth, async (req, res) => {
   try {
     const template = await EmailTemplate.findOneAndDelete({
       _id: req.params.id,
@@ -363,7 +367,7 @@ router.delete('/templates/:id', protect, async (req, res) => {
 
 // ─── GET /api/emailer/campaigns ──────────────────────────────────────────────
 
-router.get('/campaigns', protect, async (req, res) => {
+router.get('/campaigns', ...auth, async (req, res) => {
   try {
     const campaigns = await EmailCampaign.find({ company: req.user._id })
       .sort({ createdAt: -1 })
@@ -377,7 +381,7 @@ router.get('/campaigns', protect, async (req, res) => {
 
 // ─── POST /api/emailer/campaigns ─────────────────────────────────────────────
 
-router.post('/campaigns', protect, async (req, res) => {
+router.post('/campaigns', ...auth, async (req, res) => {
   try {
     const { name, subject, bodyHtml, category = 'marketing', recipients } = req.body;
 
@@ -460,7 +464,7 @@ router.post('/campaigns', protect, async (req, res) => {
 
 // ─── GET /api/emailer/campaigns/:id ──────────────────────────────────────────
 
-router.get('/campaigns/:id', protect, async (req, res) => {
+router.get('/campaigns/:id', ...auth, async (req, res) => {
   try {
     const campaign = await EmailCampaign.findOne({
       _id: req.params.id,
@@ -482,7 +486,7 @@ router.get('/campaigns/:id', protect, async (req, res) => {
 
 // ─── GET /api/emailer/logs ────────────────────────────────────────────────────
 
-router.get('/logs', protect, async (req, res) => {
+router.get('/logs', ...auth, async (req, res) => {
   try {
     const { page = 1, limit = 50, status, category, search } = req.query;
     const filter = { sender: req.user._id };
@@ -523,7 +527,7 @@ router.get('/logs', protect, async (req, res) => {
 
 // ─── GET /api/emailer/analytics ──────────────────────────────────────────────
 
-router.get('/analytics', protect, async (req, res) => {
+router.get('/analytics', ...auth, async (req, res) => {
   try {
     const { days = 30 } = req.query;
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -637,7 +641,7 @@ router.post('/send-otp', async (req, res) => {
 
 // ─── GET /api/emailer/smtp-health ────────────────────────────────────────────
 
-router.get('/smtp-health', protect, async (req, res) => {
+router.get('/smtp-health', ...auth, async (req, res) => {
   if (req.user.role !== 'superadmin') {
     return res.status(403).json({ success: false, message: 'Superadmin only' });
   }
