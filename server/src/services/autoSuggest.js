@@ -45,14 +45,21 @@ const autoSuggest = async (roleId, companyId, opts = {}) => {
 
   // 3. Score each resume against this role
   const scored = poolResumes.map((resume) => {
-    // Check if we have a fresh cached score
-    const cached = resume.roleScores?.find(
-      (rs) => rs.roleId?.toString() === roleId &&
-               rs.cachedAt && (Date.now() - new Date(rs.cachedAt).getTime()) < CACHE_TTL_MS &&
-               new Date(rs.cachedAt).getTime() > roleUpdatedAt,
-    );
+    // Convert roleScores array into a Map for O(1) lookup by roleId
+    const roleScoresMap = new Map();
+    if (Array.isArray(resume.roleScores)) {
+      for (const rs of resume.roleScores) {
+        if (rs.roleId) roleScoresMap.set(rs.roleId.toString(), rs);
+      }
+    }
 
-    if (cached) {
+    const cached = roleScoresMap.get(roleId);
+    const isFresh = cached &&
+      cached.cachedAt &&
+      (Date.now() - new Date(cached.cachedAt).getTime()) < CACHE_TTL_MS &&
+      new Date(cached.cachedAt).getTime() > roleUpdatedAt;
+
+    if (isFresh) {
       return {
         _id: resume._id,
         name: resume.name,
@@ -103,11 +110,19 @@ const autoSuggest = async (roleId, companyId, opts = {}) => {
   if (toCache.length > 0) {
     setImmediate(async () => {
       try {
-        await Promise.all(toCache.map((s) =>
-          PoolResume.findByIdAndUpdate(s._id, {
-            $pull: { roleScores: { roleId } },
-          }).then(() =>
-            PoolResume.findByIdAndUpdate(s._id, {
+        const bulkOps = toCache.map((s) => ({
+          updateOne: {
+            filter: { _id: s._id },
+            update: {
+              $pull: { roleScores: { roleId } },
+            },
+          },
+        }));
+
+        const pushOps = toCache.map((s) => ({
+          updateOne: {
+            filter: { _id: s._id },
+            update: {
               $push: {
                 roleScores: {
                   roleId,
@@ -118,9 +133,12 @@ const autoSuggest = async (roleId, companyId, opts = {}) => {
                   cachedAt: new Date(),
                 },
               },
-            })
-          )
-        ));
+            },
+          },
+        }));
+
+        await PoolResume.bulkWrite(bulkOps);
+        await PoolResume.bulkWrite(pushOps);
       } catch (e) {
         // Non-fatal — cache update failed
       }

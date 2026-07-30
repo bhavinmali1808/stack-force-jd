@@ -12,22 +12,40 @@
  * @param {{ skill: string, type: string }[]} weightedSkills - Phase 2 weighted list
  */
 const computeMatchScore = (extractedSkills, requiredSkills, weightedSkills = []) => {
-  const normalized = extractedSkills.map((s) => s.toLowerCase().trim());
+  const normalizedSet = new Set(
+    (extractedSkills || []).map((s) => s.toLowerCase().trim())
+  );
+  const normalizedList = Array.from(normalizedSet);
 
   const skillMatch = (req) => {
     const r = req.toLowerCase().trim();
-    return normalized.some((e) => e === r || e.includes(r) || r.includes(e));
+    if (normalizedSet.has(r)) return true;
+    return normalizedList.some((e) => e.includes(r) || r.includes(e));
   };
 
   // --- Phase 2: Weighted scoring ---
   if (weightedSkills && weightedSkills.length > 0) {
-    const mustHaves = weightedSkills.filter((ws) => ws.type === 'must-have');
-    const niceToHaves = weightedSkills.filter((ws) => ws.type === 'nice-to-have');
+    const mustHaves = [];
+    const niceToHaves = [];
 
-    const mustHaveMatched = mustHaves.filter((ws) => skillMatch(ws.skill)).map((ws) => ws.skill);
-    const mustHaveMissing = mustHaves.filter((ws) => !skillMatch(ws.skill)).map((ws) => ws.skill);
-    const niceToHaveMatched = niceToHaves.filter((ws) => skillMatch(ws.skill)).map((ws) => ws.skill);
-    const niceToHaveMissing = niceToHaves.filter((ws) => !skillMatch(ws.skill)).map((ws) => ws.skill);
+    for (const ws of weightedSkills) {
+      if (ws.type === 'must-have') mustHaves.push(ws);
+      else if (ws.type === 'nice-to-have') niceToHaves.push(ws);
+    }
+
+    const mustHaveMatched = [];
+    const mustHaveMissing = [];
+    for (const ws of mustHaves) {
+      if (skillMatch(ws.skill)) mustHaveMatched.push(ws.skill);
+      else mustHaveMissing.push(ws.skill);
+    }
+
+    const niceToHaveMatched = [];
+    const niceToHaveMissing = [];
+    for (const ws of niceToHaves) {
+      if (skillMatch(ws.skill)) niceToHaveMatched.push(ws.skill);
+      else niceToHaveMissing.push(ws.skill);
+    }
 
     const mustFraction = mustHaves.length > 0 ? mustHaveMatched.length / mustHaves.length : 1;
     const niceFraction = niceToHaves.length > 0 ? niceToHaveMatched.length / niceToHaves.length : 1;
@@ -41,18 +59,13 @@ const computeMatchScore = (extractedSkills, requiredSkills, weightedSkills = [])
       rawScore = mustFraction * 60 + niceFraction * 40;
     }
 
-    // Cap if any must-have is missing
     const hasMissingMustHave = mustHaveMissing.length > 0;
     const score = hasMissingMustHave ? Math.min(Math.round(rawScore), 40) : Math.round(rawScore);
 
-    // Legacy matchedSkills / missingSkills for UI display
-    const matchedSkills = [...mustHaveMatched, ...niceToHaveMatched];
-    const missingSkills = [...mustHaveMissing, ...niceToHaveMissing];
-
     return {
       score,
-      matchedSkills,
-      missingSkills,
+      matchedSkills: [...mustHaveMatched, ...niceToHaveMatched],
+      missingSkills: [...mustHaveMissing, ...niceToHaveMissing],
       hasMissingMustHave,
       mustHaveMatched,
       mustHaveMissing,
@@ -71,8 +84,12 @@ const computeMatchScore = (extractedSkills, requiredSkills, weightedSkills = [])
     };
   }
 
-  const matchedSkills = requiredSkills.filter((req) => skillMatch(req));
-  const missingSkills = requiredSkills.filter((req) => !skillMatch(req));
+  const matchedSkills = [];
+  const missingSkills = [];
+  for (const req of requiredSkills) {
+    if (skillMatch(req)) matchedSkills.push(req);
+    else missingSkills.push(req);
+  }
   const score = Math.round((matchedSkills.length / requiredSkills.length) * 100);
 
   return {

@@ -21,6 +21,7 @@ const storageRoutes = require('./routes/storage.routes');
 const queueRoutes = require('./routes/queue.routes');
 const poolRoutes = require('./routes/pool.routes');
 const skillsRoutes = require('./routes/skills.routes');
+const publicRoutes = require('./routes/public.routes');
 const { errorHandler } = require('./middleware/error.middleware');
 const { startPoolWorker } = require('./workers/poolWorkerInline');
 const { startResumeWorker } = require('./workers/resumeWorkerInline');
@@ -42,7 +43,14 @@ app.set('trust proxy', true);
 app.use(morgan(IS_PRODUCTION ? 'combined' : 'dev'));
 
 // ── CORS ────────────────────────────────────────────────────
-const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173').split(',').map(o => o.trim());
+const allowedOrigins = [
+  ...(process.env.CLIENT_URL || 'http://localhost:5174').split(',').map(o => o.trim()),
+  'http://localhost:5173', // other dev servers
+  'http://localhost:8080', // edgex-apply static
+  'http://127.0.0.1:8080',
+  'http://localhost:3001', // joblisting React app
+  'http://127.0.0.1:3001',
+];
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile, curl, health checks)
@@ -179,6 +187,7 @@ app.get('/api/health', (req, res) => res.json({
   timestamp: new Date(),
 }));
 
+app.use('/api/public', publicRoutes); // Public job board & admin endpoints — no recruiter auth required
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api', roleRoutes);
 app.use('/api', candidateRoutes);

@@ -40,9 +40,9 @@ try:
     import numpy as np
     from pdf2image import convert_from_path
     ocr_model = PaddleOCR(use_angle_cls=True, lang='en', show_log=False)
-except ImportError:
+except Exception:
     ocr_model = None
-    print("Warning: PaddleOCR dependencies not found. OCR fallback disabled.")
+    print("Warning: PaddleOCR disabled or dependencies missing. Fallback OCR will be skipped.")
 
 # Initialize Flashtext for O(N) multi-keyword extraction
 skill_processor = KeywordProcessor(case_sensitive=False)

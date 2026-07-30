@@ -40,41 +40,34 @@ const autocompleteSkill = async (query) => {
 const normalizeSkills = async (skillsArray) => {
   if (!skillsArray || skillsArray.length === 0) return [];
   
-  const results = [];
-  
-  for (const skill of skillsArray) {
-    if (cache.has(`norm_${skill}`)) {
-      results.push(cache.get(`norm_${skill}`));
-      continue;
+  const promises = skillsArray.map(async (skill) => {
+    const cacheKey = `norm_${skill}`;
+    if (cache.has(cacheKey)) {
+      return cache.get(cacheKey);
     }
 
     try {
       const response = await api.get('/skills/autocomplete', {
-        params: { contains: skill }
+        params: { contains: skill },
       });
-      
+
       const data = response.data;
       if (Array.isArray(data) && data.length > 0) {
-        // Find exact match or use the first suggestion's standardized name
-        const exactMatch = data.find(item => item.suggestion.toLowerCase() === skill.toLowerCase());
+        const exactMatch = data.find((item) => item.suggestion.toLowerCase() === skill.toLowerCase());
         const standardizedSkill = exactMatch ? exactMatch.suggestion : data[0].suggestion;
-        
-        results.push(standardizedSkill);
-        cache.set(`norm_${skill}`, standardizedSkill);
+        cache.set(cacheKey, standardizedSkill);
+        return standardizedSkill;
       } else {
-        // Fallback to original
-        results.push(skill);
-        cache.set(`norm_${skill}`, skill);
+        cache.set(cacheKey, skill);
+        return skill;
       }
     } catch (error) {
-      console.warn(`[OpenSkillsAPI] Failed to normalize "${skill}", using original.`);
-      results.push(skill);
-      // Cache the original on failure so we don't keep hitting a failing API
-      cache.set(`norm_${skill}`, skill);
+      cache.set(cacheKey, skill);
+      return skill;
     }
-  }
-  
-  // Return unique skills
+  });
+
+  const results = await Promise.all(promises);
   return Array.from(new Set(results));
 };
 

@@ -1,0 +1,135 @@
+.app { min-height: 100vh; }
+
+/* ── MAIN LAYOUT ── */
+.layout {
+  max-width: 1300px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.jobs { display: flex; flex-direction: column; gap: 14px; }
+
+/* ── TOOLBAR ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 12px 18px;
+}
+
+.count { font-size: 0.875rem; color: #64748B; }
+.count strong { color: #0F172A; font-weight: 700; }
+
+.sortRow { display: flex; align-items: center; gap: 8px; }
+.sortLabel { font-size: 0.8rem; color: #94A3B8; }
+.sortSelect {
+  border: 1px solid #E2E8F0;
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  color: #334155;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+.sortSelect:focus { border-color: #4F46E5; }
+
+/* ── JOB LIST ── */
+.list { display: flex; flex-direction: column; gap: 12px; }
+
+/* ── SKELETON CARD ── */
+.skeletonCard {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 20px 22px;
+}
+.skeletonRow {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+/* ── EMPTY / ERROR STATES ── */
+.empty {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 60px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.empty h3 { font-size: 1.05rem; font-weight: 700; color: #334155; }
+.empty p  { font-size: 0.875rem; color: #64748B; max-width: 380px; }
+.emptyBtn {
+  margin-top: 6px;
+  background: #4F46E5;
+  color: white;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+  font-family: inherit;
+}
+.emptyBtn:hover { background: #4338CA; }
+
+/* ── PAGINATION ── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 0;
+}
+
+.pageBtn {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  border: 1.5px solid #E2E8F0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #fff;
+  font-family: inherit;
+}
+.pageBtn:hover:not(:disabled) { border-color: #4F46E5; color: #4F46E5; background: #EEF2FF; }
+.pageBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+.pageActive {
+  background: #4F46E5 !important;
+  border-color: #4F46E5 !important;
+  color: white !important;
+}
+
+.pageDots {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  color: #94A3B8;
+  font-size: 0.85rem;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .layout { padding: 0 12px; }
+  .toolbar { flex-direction: column; gap: 8px; align-items: flex-start; }
+}

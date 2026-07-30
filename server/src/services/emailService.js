@@ -1,17 +1,15 @@
 const nodemailer = require('nodemailer');
 
-const sendEmail = async (options) => {
-  // Create a transporter
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.mailtrap.io',
-    port: process.env.SMTP_PORT || 2525,
-    auth: {
-      user: process.env.SMTP_USER || 'user',
-      pass: process.env.SMTP_PASS || 'pass',
-    },
-  });
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.mailtrap.io',
+  port: process.env.SMTP_PORT || 2525,
+  auth: {
+    user: process.env.SMTP_USER || 'user',
+    pass: process.env.SMTP_PASS || 'pass',
+  },
+});
 
-  // Define the email options
+const sendEmail = async (options) => {
   const message = {
     from: `${process.env.FROM_NAME || 'TalentForce'} <${process.env.FROM_EMAIL || 'noreply@talentforce.io'}>`,
     to: options.email,
@@ -20,7 +18,6 @@ const sendEmail = async (options) => {
     html: options.html,
   };
 
-  // Send the email
   const info = await transporter.sendMail(message);
   console.log('Message sent: %s', info.messageId);
 };
