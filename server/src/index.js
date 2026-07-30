@@ -50,6 +50,8 @@ const allowedOrigins = [
   'http://127.0.0.1:8080',
   'http://localhost:3001', // joblisting React app
   'http://127.0.0.1:3001',
+  'http://localhost:3002', // emailer React app
+  'http://127.0.0.1:3002',
 ];
 app.use(cors({
   origin: (origin, callback) => {
@@ -188,6 +190,7 @@ app.get('/api/health', (req, res) => res.json({
 }));
 
 app.use('/api/public', publicRoutes); // Public job board & admin endpoints — no recruiter auth required
+app.use('/api/emailer', emailerRoutes);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api', roleRoutes);
 app.use('/api', candidateRoutes);
