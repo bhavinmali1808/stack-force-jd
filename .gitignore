@@ -1,24 +1,29 @@
 # Dependencies
 node_modules/
+**/node_modules/
+
+# Environment Secrets
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
 
 # Uploads (local dev only — production uses R2)
 uploads/
 server/uploads/
 
-# Environment (Warning: Committing secrets is a security risk)
-.env.local
-.env.production.local
-client/.env.local
-
 # Build outputs
 dist/
-client/dist/
+**/dist/
 build/
+**/build/
 
 # Logs
 *.log
 npm-debug.log*
 logs/
+**/logs/
 
 # OS
 .DS_Store
