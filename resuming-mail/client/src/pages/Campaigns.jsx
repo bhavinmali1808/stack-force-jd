@@ -67,13 +67,18 @@ export default function Campaigns() {
   };
 
   const tabs = [
-    { key: 'all',   label: 'All campaigns' },
-    { key: 'sent',  label: 'Sent' },
-    { key: 'draft', label: 'Drafts' },
+    { key: 'all',    label: 'All campaigns' },
+    { key: 'sent',   label: 'Sent' },
+    { key: 'draft',  label: 'Drafts' },
+    { key: 'outbox', label: 'Outbox (Sending & Queued)' },
   ];
 
   const filtered = campaigns.filter(c => {
-    const matchTab = activeTab === 'all' || c.status === activeTab;
+    let matchTab = false;
+    if (activeTab === 'all') matchTab = true;
+    else if (activeTab === 'outbox') matchTab = ['sending', 'queued', 'paused'].includes(c.status);
+    else matchTab = c.status === activeTab;
+
     const matchSearch = !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchTab && matchSearch;
   });
@@ -100,9 +105,6 @@ export default function Campaigns() {
               {t.label}
             </button>
           ))}
-          <button className="tab-item" style={{ color: 'var(--text-3)' }}>
-            Outbox <span style={{ background: '#f3f4f6', borderRadius: '4px', padding: '0 5px', fontSize: '0.6875rem', fontWeight: 600, marginLeft: '4px' }}>+</span>
-          </button>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', paddingBottom: '0.5rem' }}>
