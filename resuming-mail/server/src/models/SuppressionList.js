@@ -8,6 +8,4 @@ const suppressionSchema = new mongoose.Schema({
   suppressedAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 
-suppressionSchema.index({ email: 1 });
-
 module.exports = mongoose.model('SuppressionList', suppressionSchema);

@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const emailLogSchema = new mongoose.Schema({
-  campaign:       { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign', index: true },
-  recipientEmail: { type: String, required: true, index: true },
+  campaign:       { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign' },
+  recipientEmail: { type: String, required: true },
   recipientName:  { type: String, default: '' },
 
   // Personalization variables snapshot

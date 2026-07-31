@@ -19,7 +19,6 @@ const contactSchema = new mongoose.Schema({
   joinedAt:    { type: Date, default: Date.now },
 }, { timestamps: true });
 
-contactSchema.index({ email: 1 });
 contactSchema.index({ plan: 1 });
 contactSchema.index({ isVerified: 1 });
 contactSchema.index({ hasResume: 1 });

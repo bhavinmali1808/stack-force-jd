@@ -9,6 +9,4 @@ const bounceSchema = new mongoose.Schema({
   suppressedAt:{ type: Date, default: Date.now },
 }, { timestamps: true });
 
-bounceSchema.index({ email: 1 });
-
 module.exports = mongoose.model('BounceList', bounceSchema);
