@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Send, CheckCircle, Eye, MousePointer, AlertTriangle, Layers, Activity, Cpu } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Send, CheckCircle, Eye, MousePointer, ArrowRight, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import api from '../api';
 
 export default function Dashboard() {
   const [overview, setOverview] = useState(null);
-  const [daily, setDaily] = useState([]);
-  const [queue, setQueue] = useState(null);
-  const [health, setHealth] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [daily, setDaily]       = useState([]);
+  const [queue, setQueue]       = useState(null);
+  const [health, setHealth]     = useState(null);
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -17,119 +18,113 @@ export default function Dashboard() {
       api.get('/queue/status').catch(() => ({ data: {} })),
       api.get('/smtp/status').catch(() => ({ data: {} })),
     ]).then(([ovRes, dailyRes, qRes, hRes]) => {
-      if (ovRes.data?.success) setOverview(ovRes.data.overview);
+      if (ovRes.data?.success)    setOverview(ovRes.data.overview);
       if (dailyRes.data?.success) setDaily(dailyRes.data.daily);
-      if (qRes.data?.success) setQueue(qRes.data.queue);
-      if (hRes.data?.success) setHealth(hRes.data.status);
+      if (qRes.data?.success)     setQueue(qRes.data.queue);
+      if (hRes.data?.success)     setHealth(hRes.data.status);
       setLoading(false);
     });
   }, []);
 
-  if (loading) {
-    return <div className="p-8 text-center" style={{ color: 'var(--text-3)' }}>Loading dashboard metrics...</div>;
-  }
-
   const stats = [
-    { label: 'Emails Sent Today', val: overview?.sentToday || 0, icon: Send, color: '#6366f1' },
-    { label: 'Delivery Rate', val: `${overview?.deliveryRate || 0}%`, icon: CheckCircle, color: '#10b981' },
-    { label: 'Open Rate', val: `${overview?.openRate || 0}%`, icon: Eye, color: '#8b5cf6' },
-    { label: 'Click Rate', val: `${overview?.clickRate || 0}%`, icon: MousePointer, color: '#06b6d4' },
+    { label: 'Emails Sent Today', value: overview?.sentToday || 0,       color: '#7c3aed', bg: '#f5f3ff', icon: Send,         trend: '+12%' },
+    { label: 'Delivered',         value: overview?.totalDelivered || 0,   color: '#059669', bg: '#ecfdf5', icon: CheckCircle,  trend: '+8.4%' },
+    { label: 'Open Rate',         value: `${overview?.openRate || 0}%`,   color: '#2563eb', bg: '#eff6ff', icon: Eye,          trend: '+2.1%' },
+    { label: 'Click Rate',        value: `${overview?.clickRate || 0}%`,  color: '#d97706', bg: '#fffbeb', icon: MousePointer, trend: '-0.3%' },
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Executive Dashboard</h1>
-          <p className="page-subtitle">Real-time engagement and queue metrics for mail.resuming.io</p>
+    <div>
+      {/* Page title */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h1 className="page-title">Overview</h1>
+        <p className="page-subtitle">Your email platform at a glance — campaigns, delivery, and system health.</p>
+      </div>
+
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.875rem', marginBottom: '1.25rem' }}>
+        {stats.map(s => (
+          <div key={s.label} style={{
+            background: '#fff', border: '1px solid var(--border)', borderRadius: '12px',
+            padding: '1.25rem', boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+            transition: 'box-shadow 0.2s',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <div style={{ width: 36, height: 36, borderRadius: '8px', background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <s.icon size={18} style={{ color: s.color }} />
+              </div>
+              <span style={{
+                fontSize: '0.6875rem', fontWeight: 600,
+                color: s.trend.startsWith('+') ? 'var(--green)' : 'var(--red)',
+                background: s.trend.startsWith('+') ? 'var(--green-bg)' : 'var(--red-bg)',
+                padding: '0.15rem 0.5rem', borderRadius: '6px',
+              }}>{s.trend}</span>
+            </div>
+            <div style={{ fontSize: '1.375rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: '0.2rem' }}>
+              {loading ? '—' : s.value}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', fontWeight: 500 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Chart - full width */}
+      <div style={{
+        background: '#fff', border: '1px solid var(--border)', borderRadius: '12px',
+        padding: '1.25rem', boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+        marginBottom: '1rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-1)' }}>Email Volume — Last 14 days</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>Daily send throughput</div>
+          </div>
+          <Link to="/analytics" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--purple)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            Full Analytics <ArrowRight size={13} />
+          </Link>
+        </div>
+        <div style={{ height: 220 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={daily.length ? daily : [{ _id: '-', sent: 0 }]}>
+              <defs>
+                <linearGradient id="gSent" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor="#7c3aed" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="_id" stroke="#e5e7eb" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis stroke="#e5e7eb" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{ background: '#fff', borderColor: '#e5e7eb', borderRadius: '8px', fontSize: '0.75rem', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                labelStyle={{ color: '#374151', fontWeight: 600 }}
+              />
+              <Area type="monotone" dataKey="sent" stroke="#7c3aed" strokeWidth={2} fillOpacity={1} fill="url(#gSent)" name="Sent" dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Top 4 Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {stats.map((s, i) => {
-          const Icon = s.icon;
-          return (
-            <div key={i} className="stat-card">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold" style={{ color: 'var(--text-3)' }}>{s.label}</span>
-                <div className="p-2 rounded-lg" style={{ background: `${s.color}15`, color: s.color }}>
-                  <Icon size={16} />
-                </div>
-              </div>
-              <div className="text-2xl font-black" style={{ color: 'var(--text-1)' }}>{s.val}</div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Main Charts + System Status Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Timeline Chart (2 Cols) */}
-        <div className="lg:col-span-2 card">
-          <h2 className="text-base font-bold mb-4" style={{ color: 'var(--text-1)' }}>Volume & Engagement (14 Days)</h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={daily}>
-                <defs>
-                  <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorOpen" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="_id" stroke="#64748b" fontSize={12} />
-                <YAxis stroke="#64748b" fontSize={12} />
-                <Tooltip contentStyle={{ background: '#141928', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} />
-                <Area type="monotone" dataKey="sent" stroke="#6366f1" fillOpacity={1} fill="url(#colorSent)" name="Sent" />
-                <Area type="monotone" dataKey="opened" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorOpen)" name="Opened" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Queue card - small summary */}
+      <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+        <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-1)', marginBottom: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Clock size={15} style={{ color: 'var(--purple)' }} /> Email Queue
         </div>
-
-        {/* System & Queue Status Card */}
-        <div className="card space-y-4">
-          <h2 className="text-base font-bold" style={{ color: 'var(--text-1)' }}>Engine & Queue Status</h2>
-          
-          <div className="p-3 rounded-lg flex items-center justify-between" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <div className="flex items-center gap-3">
-              <Activity size={18} className="text-indigo-400" />
-              <div>
-                <div className="text-xs font-semibold">SMTP Engine (Postfix)</div>
-                <div className="text-xs" style={{ color: 'var(--text-3)' }}>mail.resuming.io:587</div>
-              </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '0.75rem' }}>
+          {[
+            { label: 'Waiting',   value: queue?.waiting   || 0, color: 'var(--amber)' },
+            { label: 'Active',    value: queue?.active    || 0, color: 'var(--purple)' },
+            { label: 'Completed', value: queue?.completed || 0, color: 'var(--green)' },
+            { label: 'Failed',    value: queue?.failed    || 0, color: 'var(--red)' },
+          ].map(r => (
+            <div key={r.label} style={{ textAlign: 'center', padding: '0.75rem', background: '#fafafa', borderRadius: '10px', border: '1px solid #f3f4f6' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 700, color: r.color, marginBottom: '0.25rem' }}>{loading ? '—' : r.value.toLocaleString()}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', fontWeight: 500 }}>{r.label}</div>
             </div>
-            <span className={`badge ${health?.smtp?.ok ? 'badge-green' : 'badge-red'}`}>
-              {health?.smtp?.ok ? 'Operational' : 'Offline'}
-            </span>
-          </div>
-
-          <div className="p-3 rounded-lg flex items-center justify-between" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <div className="flex items-center gap-3">
-              <Layers size={18} className="text-amber-400" />
-              <div>
-                <div className="text-xs font-semibold">BullMQ Queue</div>
-                <div className="text-xs" style={{ color: 'var(--text-3)' }}>{queue?.waiting || 0} waiting · {queue?.active || 0} active</div>
-              </div>
-            </div>
-            <span className="badge badge-amber">{queue?.total || 0} Total</span>
-          </div>
-
-          <div className="p-3 rounded-lg flex items-center justify-between" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <div className="flex items-center gap-3">
-              <Cpu size={18} className="text-cyan-400" />
-              <div>
-                <div className="text-xs font-semibold">VPS Metrics</div>
-                <div className="text-xs" style={{ color: 'var(--text-3)' }}>CPU Load: {health?.system?.cpu || '0.00'}</div>
-              </div>
-            </div>
-            <span className="badge badge-blue">RAM: {health?.system?.memUsed || 0}%</span>
-          </div>
+          ))}
         </div>
+        <Link to="/queue" style={{ display: 'block', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--purple)', marginTop: '0.875rem', textDecoration: 'none' }}>
+          Manage Queue →
+        </Link>
       </div>
     </div>
   );

@@ -56,15 +56,8 @@ router.post('/:id/send', protect, notViewer, async (req, res) => {
   }
 
   // Resolve audience
-  console.log("================================");
-console.log("CAMPAIGN:", campaign);
-console.log("AUDIENCE TYPE:", campaign.audienceType);
-
-const contacts = await resolveAudience(campaign.audienceType);
-
-console.log("CONTACTS FOUND:", contacts.length);
-console.log(contacts);
-console.log("================================");  if (contacts.length === 0) {
+  const contacts = await resolveAudience(campaign.audienceType);
+  if (contacts.length === 0) {
     return res.status(400).json({ success: false, message: 'No eligible contacts in audience' });
   }
 

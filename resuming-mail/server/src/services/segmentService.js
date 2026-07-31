@@ -89,7 +89,7 @@ const resolveAudience = async (audienceType, segment = null) => {
 
   let query = {
     isUnsubscribed: { $ne: true },
-    isActive: true,
+    isActive: { $ne: false },
     email: { $nin: suppressedEmails },
   };
 
@@ -100,14 +100,9 @@ const resolveAudience = async (audienceType, segment = null) => {
     Object.assign(query, AUDIENCE_QUERIES[audienceType]);
   }
 
-  console.log("AUDIENCE QUERY:", JSON.stringify(query, null, 2));
-
   const contacts = await Contact.find(query)
     .select("email firstName lastName plan resumeScore resumeTitle isVerified")
     .lean();
-
-  console.log("FOUND CONTACTS:", contacts.length);
-  console.log(contacts);
 
   return contacts;
 };

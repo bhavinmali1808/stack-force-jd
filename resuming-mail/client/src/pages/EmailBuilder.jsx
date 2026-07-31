@@ -107,7 +107,7 @@ export default function EmailBuilder() {
         <div className="md:col-span-3 card p-0 flex flex-col overflow-hidden">
           {tab === 'editor' ? (
             <textarea
-              className="w-full h-full p-4 bg-slate-950 text-slate-200 font-mono text-sm outline-none resize-none"
+              className="w-full h-full p-4 bg-white border-2 border-black text-black font-mono text-sm outline-none resize-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
               value={html}
               onChange={e => setHtml(e.target.value)}
               placeholder="Write raw HTML or use block snippets..."

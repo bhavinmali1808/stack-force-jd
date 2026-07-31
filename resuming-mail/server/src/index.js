@@ -60,7 +60,7 @@ app.use(morgan(IS_PROD ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.set('trust proxy', true);
+app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
 // General rate limit
 app.use('/api/', rateLimit({ windowMs: 60000, max: 200, standardHeaders: true, legacyHeaders: false }));
