@@ -89,8 +89,8 @@ const resolveAudience = async (audienceType, segment = null) => {
 
   let query = {
     isUnsubscribed: { $ne: true },
-    isActive:       true,
-    email:          { $nin: suppressedEmails },
+    isActive: true,
+    email: { $nin: suppressedEmails },
   };
 
   if (segment?.conditions) {
@@ -100,13 +100,17 @@ const resolveAudience = async (audienceType, segment = null) => {
     Object.assign(query, AUDIENCE_QUERIES[audienceType]);
   }
 
+  console.log("AUDIENCE QUERY:", JSON.stringify(query, null, 2));
+
   const contacts = await Contact.find(query)
-    .select('email firstName lastName plan resumeScore resumeTitle isVerified')
+    .select("email firstName lastName plan resumeScore resumeTitle isVerified")
     .lean();
+
+  console.log("FOUND CONTACTS:", contacts.length);
+  console.log(contacts);
 
   return contacts;
 };
-
 /**
  * Count audience size without fetching all docs
  */
