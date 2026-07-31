@@ -25,8 +25,8 @@ const getRedis = () => {
 
 // ── Queue Names ───────────────────────────────
 const QUEUES = {
-  EMAIL: 'resuming:email',
-  SCHEDULE: 'resuming:schedule',
+  EMAIL: 'resuming-email',
+  SCHEDULE: 'resuming-schedule',
 };
 
 module.exports = { redisConfig, createConnection, getRedis, QUEUES };
