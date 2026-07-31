@@ -9,10 +9,11 @@ const api = axios.create({
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
-      // Token expired or invalid → redirect to login
-      useAuthStore?.getState?.()?.logout?.();
-      window.location.href = '/login';
+    const url = err.config?.url || '';
+    if (err.response?.status === 401 && !url.includes('/auth/me') && !url.includes('/auth/login')) {
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err.response?.data || err);
   }
