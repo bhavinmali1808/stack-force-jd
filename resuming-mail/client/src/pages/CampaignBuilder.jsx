@@ -14,8 +14,8 @@ export default function CampaignBuilder() {
     subject: '',
     previewText: '',
     senderName: 'Resuming.io',
-    senderEmail: 'noreply@resuming.io',
-    replyTo: '',
+    senderEmail: 'no-reply@resuming.io',
+    replyTo: 'teams@resuming.io',
     templateId: '',
     audienceType: 'all',
   });
@@ -84,11 +84,17 @@ export default function CampaignBuilder() {
           </div>
           <div>
             <label className="block text-xs font-semibold mb-1 text-slate-300">Sender Email</label>
-            <input className="input" value={form.senderEmail} onChange={e => setForm(p => ({...p, senderEmail: e.target.value}))} required />
+            <select className="select" value={form.senderEmail} onChange={e => setForm(p => ({...p, senderEmail: e.target.value}))} required>
+              <option value="no-reply@resuming.io">no-reply@resuming.io (Broadcast / System / Automated)</option>
+              <option value="teams@resuming.io">teams@resuming.io (Support / Team / Internal)</option>
+            </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-1 text-slate-300">Reply-To (Optional)</label>
-            <input className="input" placeholder="support@resuming.io" value={form.replyTo} onChange={e => setForm(p => ({...p, replyTo: e.target.value}))} />
+            <label className="block text-xs font-semibold mb-1 text-slate-300">Reply-To Address</label>
+            <select className="select" value={form.replyTo} onChange={e => setForm(p => ({...p, replyTo: e.target.value}))}>
+              <option value="teams@resuming.io">teams@resuming.io (Customer Support & Team Inbox)</option>
+              <option value="no-reply@resuming.io">no-reply@resuming.io (No Replies Accepted)</option>
+            </select>
           </div>
         </div>
 

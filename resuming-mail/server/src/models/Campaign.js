@@ -5,8 +5,8 @@ const campaignSchema = new mongoose.Schema({
   subject:     { type: String, required: true },
   previewText: { type: String, default: '' },
   senderName:  { type: String, default: 'Resuming.io' },
-  senderEmail: { type: String, default: 'noreply@resuming.io' },
-  replyTo:     { type: String, default: '' },
+  senderEmail: { type: String, default: 'no-reply@resuming.io' },
+  replyTo:     { type: String, default: 'teams@resuming.io' },
 
   templateId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Template' },
   segmentId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Segment' },
