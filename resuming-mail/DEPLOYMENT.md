@@ -29,7 +29,7 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
-    # API Requests -> Node Express Backend
+    # API Requests -> Node Express Backend (PM2 Cluster)
     location /api/ {
         proxy_pass http://127.0.0.1:3001/api/;
         proxy_http_version 1.1;
@@ -50,7 +50,7 @@ server {
 }
 ```
 
-## 3. PM2 Ecosystem File (`resuming-mail/server/ecosystem.config.js`)
+## 3. PM2 Cluster Ecosystem File (`resuming-mail/server/ecosystem.config.js`)
 
 ```javascript
 module.exports = {
@@ -58,6 +58,8 @@ module.exports = {
     {
       name: "mail-api",
       script: "src/index.js",
+      instances: "max",       // Spawns 1 instance per CPU core (Cluster Mode)
+      exec_mode: "cluster",   // Enables Node.js cluster load balancing
       env: {
         NODE_ENV: "production",
         PORT: 3001
@@ -66,8 +68,11 @@ module.exports = {
     {
       name: "mail-worker",
       script: "src/workers/emailWorker.js",
+      instances: 4,           // 4 parallel worker processes processing queue concurrently
+      exec_mode: "fork",
       env: {
-        NODE_ENV: "production"
+        NODE_ENV: "production",
+        EMAIL_CONCURRENCY: 5
       }
     }
   ]
