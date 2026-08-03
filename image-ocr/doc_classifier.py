@@ -102,11 +102,20 @@ def classify_and_extract_fields(text: str) -> dict:
     passport_match = re.search(r'\b[A-Z]{1}[0-9]{7}\b', text)
     dl_match = re.search(r'\b[A-Z]{2}[-\s]?\d{2}[-\s]?(?:19|20)\d{11}\b', text)
 
+    # Aadhaar recognition check
+    is_aadhaar = (
+        aadhaar_match or 
+        ("AADHAAR" in upper_text) or 
+        ("AADHAR" in upper_text) or 
+        ("GOVERNMENT OF INDIA" in upper_text and ("DOB" in upper_text or "DATE OF BIRTH" in upper_text or "GENDER" in upper_text or "MALE" in upper_text or "FEMALE" in upper_text)) or
+        ("BHARAT SARKAR" in upper_text)
+    )
+
     if pan_match:
         doc_category = "1. Identity Documents"
         doc_type = "PAN Card"
         extracted_fields["pan_number"] = pan_match.group(0)
-    elif aadhaar_match or ("GOVERNMENT OF INDIA" in upper_text and "UNIQUE IDENTIFICATION" in upper_text):
+    elif is_aadhaar:
         doc_category = "1. Identity Documents"
         doc_type = "Aadhaar Card"
         if aadhaar_match:
