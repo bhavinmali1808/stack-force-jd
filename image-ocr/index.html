@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Image OCR Data Extractor</title>
+  <title>OCR Data Extractor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-      --card-bg: rgba(30, 41, 59, 0.7);
-      --card-border: rgba(255, 255, 255, 0.1);
-      --accent-purple: #8b5cf6;
-      --accent-cyan: #06b6d4;
-      --accent-pink: #ec4899;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
+      --bg-black: #000000;
+      --card-bg: #0a0a0a;
+      --panel-bg: #121212;
+      --border-color: #262626;
+      --border-hover: #404040;
+      --text-white: #ffffff;
+      --text-muted: #a3a3a3;
+      --text-subtle: #737373;
     }
 
     * {
@@ -26,45 +26,46 @@
     }
 
     body {
-      font-family: 'Outfit', sans-serif;
-      background: var(--bg-gradient);
-      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-black);
+      color: var(--text-white);
       min-height: 100vh;
-      padding: 2rem 1rem;
+      padding: 3rem 1.5rem;
       display: flex;
       flex-direction: column;
       align-items: center;
+      -webkit-font-smoothing: antialiased;
     }
 
     header {
       text-align: center;
-      margin-bottom: 2.5rem;
-      max-width: 800px;
+      margin-bottom: 3rem;
+      max-width: 700px;
     }
 
     header h1 {
-      font-size: 2.75rem;
+      font-size: 2.25rem;
       font-weight: 700;
-      background: linear-gradient(to right, var(--accent-cyan), var(--accent-purple), var(--accent-pink));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.03em;
+      color: var(--text-white);
       margin-bottom: 0.5rem;
     }
 
     header p {
       color: var(--text-muted);
-      font-size: 1.1rem;
+      font-size: 1rem;
+      font-weight: 400;
     }
 
     .container {
       width: 100%;
-      max-width: 1200px;
+      max-width: 1140px;
       display: grid;
       grid-template-columns: 1fr;
-      gap: 2rem;
+      gap: 1.5rem;
     }
 
-    @media (min-width: 900px) {
+    @media (min-width: 850px) {
       .container {
         grid-template-columns: 1fr 1fr;
       }
@@ -72,61 +73,65 @@
 
     .card {
       background: var(--card-bg);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--card-border);
-      border-radius: 1.25rem;
-      padding: 2rem;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1.75rem;
       display: flex;
       flex-direction: column;
     }
 
-    .card-title {
-      font-size: 1.25rem;
+    .card-header {
+      font-size: 0.95rem;
       font-weight: 600;
-      margin-bottom: 1.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1.5rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      color: var(--accent-cyan);
+      color: var(--text-muted);
     }
 
     .dropzone {
-      border: 2px dashed rgba(139, 92, 246, 0.4);
-      border-radius: 1rem;
+      border: 1px dashed var(--border-hover);
+      border-radius: 0.5rem;
       padding: 3rem 1.5rem;
       text-align: center;
       cursor: pointer;
-      transition: all 0.3s ease;
-      background: rgba(15, 23, 42, 0.4);
+      transition: all 0.2s ease;
+      background: var(--panel-bg);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1rem;
-      min-height: 250px;
+      gap: 0.75rem;
+      min-height: 240px;
     }
 
     .dropzone:hover, .dropzone.dragover {
-      border-color: var(--accent-cyan);
-      background: rgba(6, 182, 212, 0.08);
-      transform: translateY(-2px);
+      border-color: var(--text-white);
+      background: #171717;
     }
 
     .dropzone svg {
-      width: 48px;
-      height: 48px;
-      stroke: var(--accent-purple);
-      transition: stroke 0.3s ease;
+      width: 36px;
+      height: 36px;
+      stroke: var(--text-muted);
+      transition: stroke 0.2s ease;
     }
 
     .dropzone:hover svg {
-      stroke: var(--accent-cyan);
+      stroke: var(--text-white);
     }
 
     .dropzone p {
       color: var(--text-muted);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
+    }
+
+    .dropzone .subtext {
+      color: var(--text-subtle);
+      font-size: 0.75rem;
     }
 
     .file-input {
@@ -134,31 +139,31 @@
     }
 
     .preview-container {
-      margin-top: 1.5rem;
+      margin-top: 1.25rem;
       position: relative;
-      border-radius: 0.75rem;
+      border-radius: 0.5rem;
       overflow: hidden;
       display: none;
-      border: 1px solid var(--card-border);
+      border: 1px solid var(--border-color);
+      background: #050505;
     }
 
     .preview-container img {
       width: 100%;
-      max-height: 350px;
+      max-height: 320px;
       object-fit: contain;
-      background: #000;
       display: block;
     }
 
-    /* Scanning Laser Overlay */
+    /* Minimalist Scan Laser */
     .scan-laser {
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, var(--accent-cyan), var(--accent-pink), transparent);
-      box-shadow: 0 0 15px var(--accent-cyan), 0 0 25px var(--accent-pink);
+      height: 2px;
+      background: var(--text-white);
+      box-shadow: 0 0 10px #ffffff, 0 0 20px #ffffff;
       display: none;
       animation: scanAnim 2s ease-in-out infinite alternate;
       z-index: 10;
@@ -169,41 +174,142 @@
       100% { top: 96%; }
     }
 
+    .btn {
+      background: var(--text-white);
+      color: var(--bg-black);
+      border: 1px solid var(--text-white);
+      padding: 0.85rem 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 1.25rem;
+      width: 100%;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: #e5e5e5;
+      border-color: #e5e5e5;
+    }
+
+    .btn:disabled {
+      background: #262626;
+      color: #737373;
+      border-color: #262626;
+      cursor: not-allowed;
+    }
+
+    .result-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      height: 100%;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+
+    .metric-box {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 0.85rem 0.5rem;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-white);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .metric-label {
+      font-size: 0.7rem;
+      color: var(--text-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 0.2rem;
+    }
+
+    .output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 0.25rem 0.6rem;
+      font-size: 0.75rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      border-color: var(--text-white);
+      color: var(--text-white);
+    }
+
+    .output-box {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: #d4d4d4;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      overflow-y: auto;
+      min-height: 180px;
+      max-height: 320px;
+      flex-grow: 1;
+    }
+
+    .structured-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .tag {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-white);
+      padding: 0.35rem 0.75rem;
+      border-radius: 0.375rem;
+      font-size: 0.78rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Minimal White Loader */
     .ocr-loader-container {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 2.5rem 1rem;
+      padding: 3rem 1rem;
       gap: 1.25rem;
       text-align: center;
     }
 
-    .pulse-ring {
-      width: 56px;
-      height: 56px;
+    .minimal-spinner {
+      width: 32px;
+      height: 32px;
+      border: 2px solid rgba(255, 255, 255, 0.15);
       border-radius: 50%;
-      background: rgba(139, 92, 246, 0.15);
-      border: 3px solid var(--accent-cyan);
-      box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      animation: pulseGlow 1.5s ease-in-out infinite alternate;
-    }
-
-    @keyframes pulseGlow {
-      0% { transform: scale(0.95); box-shadow: 0 0 10px rgba(6, 182, 212, 0.4); }
-      100% { transform: scale(1.1); box-shadow: 0 0 25px rgba(236, 72, 153, 0.7); }
-    }
-
-    .loading-spinner {
-      display: inline-block;
-      width: 24px;
-      height: 24px;
-      border: 3px solid rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
-      border-top-color: var(--accent-cyan);
+      border-top-color: var(--text-white);
       animation: spin 0.8s linear infinite;
     }
 
@@ -215,22 +321,22 @@
 <body>
 
   <header>
-    <h1>Image OCR Data Extractor</h1>
-    <p>Upload an image to extract text, metrics, and structured information cleanly.</p>
+    <h1>OCR Data Extractor</h1>
+    <p>Minimalistic monochrome text & structured metadata engine</p>
   </header>
 
   <div class="container">
     <!-- Upload Section -->
     <div class="card">
-      <div class="card-title">
-        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        Upload Image
+      <div class="card-header">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Source Image
       </div>
 
       <div class="dropzone" id="dropzone">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-        <p><strong>Click to browse</strong> or drag & drop an image here</p>
-        <p style="font-size: 0.8rem;">Supports PNG, JPG, JPEG, WEBP, BMP</p>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        <p><strong>Click to browse</strong> or drag & drop an image</p>
+        <p class="subtext">PNG, JPG, JPEG, WEBP, BMP</p>
         <input type="file" id="fileInput" class="file-input" accept="image/*">
       </div>
 
@@ -239,13 +345,13 @@
         <img id="imagePreview" src="" alt="Selected Preview">
       </div>
 
-      <button class="btn" id="extractBtn" style="background: linear-gradient(135deg, var(--accent-purple), #6d28d9); color: #fff; border: none; padding: 0.85rem 1.75rem; font-size: 1rem; font-weight: 600; border-radius: 0.75rem; cursor: pointer; transition: all 0.3s ease; margin-top: 1.5rem; width: 100%; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);" disabled>Extract Data</button>
+      <button class="btn" id="extractBtn" disabled>Extract Data</button>
     </div>
 
     <!-- Results Section -->
     <div class="card">
-      <div class="card-title">
-        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <div class="card-header">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         Extraction Results
       </div>
 
@@ -265,12 +371,15 @@
           </div>
         </div>
 
-        <div style="font-size: 0.9rem; font-weight: 500; color: var(--text-muted);">Extracted Text:</div>
-        <div class="output-box" id="outputBox">Upload an image and click "Extract Data" to view results...</div>
+        <div class="output-header">
+          <span>Extracted Text</span>
+          <button class="copy-btn" id="copyBtn" onclick="copyText()">Copy</button>
+        </div>
+        <div class="output-box" id="outputBox">Upload an image to inspect text extraction...</div>
 
-        <div style="font-size: 0.9rem; font-weight: 500; color: var(--text-muted); margin-top: 0.5rem;">Detected Entities:</div>
+        <div style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted); margin-top: 0.25rem;">Detected Entities & Classification</div>
         <div class="structured-tags" id="tagsContainer">
-          <span style="color: var(--text-muted); font-size: 0.85rem;">None detected yet</span>
+          <span style="color: var(--text-subtle); font-size: 0.8rem;">None detected yet</span>
         </div>
       </div>
     </div>
@@ -282,12 +391,14 @@
     const previewContainer = document.getElementById('previewContainer');
     const imagePreview = document.getElementById('imagePreview');
     const extractBtn = document.getElementById('extractBtn');
+    const scanLaser = document.getElementById('scanLaser');
     
     const outputBox = document.getElementById('outputBox');
     const wordCount = document.getElementById('wordCount');
     const confidence = document.getElementById('confidence');
     const engineName = document.getElementById('engineName');
     const tagsContainer = document.getElementById('tagsContainer');
+    const copyBtn = document.getElementById('copyBtn');
 
     let selectedFile = null;
 
@@ -329,31 +440,33 @@
       reader.readAsDataURL(file);
     }
 
-    const scanLaser = document.getElementById('scanLaser');
+    function copyText() {
+      if (!outputBox.innerText || outputBox.innerText.startsWith('Upload an image')) return;
+      navigator.clipboard.writeText(outputBox.innerText);
+      copyBtn.innerText = 'Copied!';
+      setTimeout(() => copyBtn.innerText = 'Copy', 2000);
+    }
 
     extractBtn.addEventListener('click', async () => {
       if (!selectedFile) return;
 
       extractBtn.disabled = true;
-      extractBtn.innerHTML = '<span class="loading-spinner"></span> Processing...';
+      extractBtn.innerText = 'Processing...';
       
-      // Activate laser scanner
       if (scanLaser) scanLaser.style.display = 'block';
 
-      // Animated loading state
+      // Minimal white loader state
       outputBox.innerHTML = `
         <div class="ocr-loader-container">
-          <div class="pulse-ring">
-            <span class="loading-spinner"></span>
-          </div>
-          <div style="font-weight: 600; color: var(--accent-cyan);" id="statusText">🔍 Scanning Image & Enhancing Contrast...</div>
-          <div style="font-size: 0.8rem; color: var(--text-muted);">Executing RapidOCR ONNX Recognition Engine</div>
+          <div class="minimal-spinner"></div>
+          <div style="font-weight: 500; color: var(--text-white);" id="statusText">Scanning Image & Extracting Layout...</div>
+          <div style="font-size: 0.75rem; color: var(--text-subtle);">RapidOCR ONNX Engine</div>
         </div>
       `;
 
       const statusText = document.getElementById('statusText');
       const statusTimer = setTimeout(() => {
-        if (statusText) statusText.innerText = '🤖 Extracting Text & Bounding Boxes...';
+        if (statusText) statusText.innerText = 'Processing Bounding Boxes & Text...';
       }, 1200);
 
       const formData = new FormData();
@@ -368,7 +481,7 @@
         clearTimeout(statusTimer);
 
         if (!response.ok) {
-          throw new Error(`Server returned HTTP ${response.status} (${response.statusText})`);
+          throw new Error(`HTTP ${response.status} (${response.statusText})`);
         }
 
         const data = await response.json();
@@ -379,7 +492,7 @@
           confidence.innerText = data.metadata.average_confidence > 0 ? `${data.metadata.average_confidence}%` : 'N/A';
           engineName.innerText = data.engine;
 
-          // Render entity tags & document classification
+          // Render entity tags & document classification cleanly
           tagsContainer.innerHTML = '';
           const { emails, phones, urls, document_fields } = data.structured_data || {};
 
@@ -388,24 +501,23 @@
 
           const categoryTag = document.createElement('span');
           categoryTag.className = 'tag';
-          categoryTag.style.borderColor = 'var(--accent-purple)';
-          categoryTag.style.background = 'rgba(139, 92, 246, 0.2)';
-          categoryTag.innerText = `📄 Type: ${docType} (${docCategory})`;
+          categoryTag.style.borderColor = '#ffffff';
+          categoryTag.innerText = `Document: ${docType} (${docCategory})`;
           tagsContainer.appendChild(categoryTag);
 
           if (document_fields && Object.keys(document_fields).length > 0) {
             Object.entries(document_fields).forEach(([key, val]) => {
               const tagSpan = document.createElement('span');
               tagSpan.className = 'tag';
-              tagSpan.innerText = `🔹 ${key}: ${Array.isArray(val) ? val.join(', ') : val}`;
+              tagSpan.innerText = `${key}: ${Array.isArray(val) ? val.join(', ') : val}`;
               tagsContainer.appendChild(tagSpan);
             });
           }
 
           const allTags = [
-            ...(emails || []).map(e => `📧 ${e}`),
-            ...(phones || []).map(p => `📞 ${p}`),
-            ...(urls || []).map(u => `🔗 ${u}`)
+            ...(emails || []).map(e => `email: ${e}`),
+            ...(phones || []).map(p => `phone: ${p}`),
+            ...(urls || []).map(u => `url: ${u}`)
           ];
 
           allTags.forEach(text => {
@@ -419,7 +531,7 @@
           outputBox.innerText = `Error: ${data.error || 'Failed to process image.'}`;
         }
       } catch (err) {
-        outputBox.innerHTML = `<span style="color: #ef4444; font-weight: 600;">⚠️ Connection / Server Error:</span>\n${err.message}\n\n💡 Tip: The server worker may have restarted. Please click "Extract Data" again to retry!`;
+        outputBox.innerHTML = `<span style="color: #ef4444; font-weight: 600;">Server / Network Notice:</span>\n${err.message}\n\nPlease retry clicking "Extract Data".`;
       } finally {
         if (scanLaser) scanLaser.style.display = 'none';
         extractBtn.disabled = false;
