@@ -155,6 +155,36 @@ def extract_data_from_image(image_bytes: bytes) -> dict:
             logger.error(f"RapidOCR extraction error: {e}")
 
     if not extracted_text:
+        # Fallback 1: Try EasyOCR if available
+        try:
+            import easyocr
+            reader = easyocr.Reader(['en'], gpu=False)
+            results = reader.readtext(np.array(image.convert("RGB")))
+            if results:
+                easy_lines = []
+                conf_sum = 0
+                for bbox, text, prob in results:
+                    easy_lines.append(text)
+                    conf_sum += prob
+                extracted_text = "\n".join(easy_lines)
+                confidence = round((conf_sum / len(results)) * 100.0, 2)
+                engine_used = "EasyOCR Engine"
+        except Exception as e:
+            logger.debug(f"EasyOCR fallback skip/error: {e}")
+
+    if not extracted_text:
+        # Fallback 2: Try PyTesseract if tesseract is installed
+        try:
+            import pytesseract
+            tess_text = pytesseract.image_to_string(optimized_image)
+            if tess_text and tess_text.strip():
+                extracted_text = tess_text.strip()
+                confidence = 85.0
+                engine_used = "Tesseract OCR Engine"
+        except Exception as e:
+            logger.debug(f"PyTesseract fallback skip/error: {e}")
+
+    if not extracted_text:
         engine_used = "PIL Analyzer"
         extracted_text = "No readable text detected in image."
 

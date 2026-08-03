@@ -2,5 +2,8 @@ fastapi
 uvicorn[standard]
 python-multipart
 pillow
+numpy
+rapidocr_onnxruntime
+onnxruntime
 pytesseract
 easyocr
