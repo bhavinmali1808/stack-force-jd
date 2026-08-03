@@ -106,12 +106,12 @@ const io = new SocketIO(server, {
 });
 
 // ── Socket.io Redis Adapter (production multi-instance scaling) ──
-if (IS_PRODUCTION) {
+if (IS_PRODUCTION && process.env.REDIS_URL) {
   try {
     const { createAdapter } = require('@socket.io/redis-adapter');
     const Redis = require('ioredis');
     const pubClient = new Redis(process.env.REDIS_URL, {
-      tls: process.env.REDIS_URL?.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
+      tls: process.env.REDIS_URL.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
     });
     const subClient = pubClient.duplicate();
     io.adapter(createAdapter(pubClient, subClient));

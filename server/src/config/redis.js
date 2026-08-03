@@ -14,14 +14,14 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 let redisClient = null;
 
 function getRedisClient() {
-  if (!IS_PRODUCTION) return null;
+  if (!IS_PRODUCTION || !process.env.REDIS_URL) return null;
   if (redisClient) return redisClient;
 
   const Redis = require('ioredis');
   redisClient = new Redis(process.env.REDIS_URL, {
     maxRetriesPerRequest: null, // Required for BullMQ
     enableReadyCheck: false,
-    tls: process.env.REDIS_URL?.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
+    tls: process.env.REDIS_URL.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
   });
 
   redisClient.on('connect', () => console.log('🔴 [Redis] Connected'));
