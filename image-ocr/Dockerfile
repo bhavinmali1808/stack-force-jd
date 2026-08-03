@@ -9,12 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copy dependencies list and install
-COPY requirements.txt .
+# Copy dependencies list and install (works whether context is root or subfolder)
+COPY image-ocr/requirements.txt* requirements.txt* ./
 RUN pip install --no-cache-dir -r requirements.txt gunicorn uvloop httptools
 
 # Copy application files
-COPY . .
+COPY image-ocr/ ./
+COPY . ./
 
 # Expose server port
 EXPOSE 8000
