@@ -24,6 +24,16 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INDEX_HTML_PATH = os.path.join(BASE_DIR, "index.html")
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Warms up the OCR engine during application boot so requests respond instantly."""
+    try:
+        from ocr_engine import get_ocr_engine
+        get_ocr_engine()
+    except Exception as e:
+        print(f"Startup OCR warmup notice: {e}")
+
+
 @app.get("/", response_class=HTMLResponse)
 async def get_ui():
     """Serves the web user interface for testing image OCR extraction."""

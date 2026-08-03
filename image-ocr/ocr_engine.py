@@ -155,37 +155,25 @@ def extract_data_from_image(image_bytes: bytes) -> dict:
             logger.error(f"RapidOCR extraction error: {e}")
 
     if not extracted_text:
-        # Fallback 1: Try EasyOCR if available
+        # High quality image analysis fallback if rapidocr produced no text boxes
         try:
-            import easyocr
-            reader = easyocr.Reader(['en'], gpu=False)
-            results = reader.readtext(np.array(image.convert("RGB")))
-            if results:
-                easy_lines = []
-                conf_sum = 0
-                for bbox, text, prob in results:
-                    easy_lines.append(text)
-                    conf_sum += prob
-                extracted_text = "\n".join(easy_lines)
-                confidence = round((conf_sum / len(results)) * 100.0, 2)
-                engine_used = "EasyOCR Engine"
+            # Re-try with raw PIL image enhancement
+            enhancer = ImageEnhance.Contrast(image.convert('L'))
+            enhanced_raw = np.array(enhancer.enhance(2.5).convert("RGB"))
+            ocr_eng = get_ocr_engine()
+            if ocr_eng is not None:
+                res_retry, _ = ocr_eng(enhanced_raw)
+                if res_retry:
+                    raw_lines = [item[1] for item in res_retry]
+                    scores = [float(item[2]) for item in res_retry]
+                    extracted_text = "\n".join(raw_lines)
+                    confidence = round((sum(scores) / len(scores)) * 100.0, 2)
+                    engine_used = "RapidOCR Engine (High-Contrast Pass)"
         except Exception as e:
-            logger.debug(f"EasyOCR fallback skip/error: {e}")
+            logger.error(f"Secondary pass error: {e}")
 
     if not extracted_text:
-        # Fallback 2: Try PyTesseract if tesseract is installed
-        try:
-            import pytesseract
-            tess_text = pytesseract.image_to_string(optimized_image)
-            if tess_text and tess_text.strip():
-                extracted_text = tess_text.strip()
-                confidence = 85.0
-                engine_used = "Tesseract OCR Engine"
-        except Exception as e:
-            logger.debug(f"PyTesseract fallback skip/error: {e}")
-
-    if not extracted_text:
-        engine_used = "PIL Analyzer"
+        engine_used = "PIL Engine"
         extracted_text = "No readable text detected in image."
 
     emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', extracted_text)

@@ -150,104 +150,61 @@
       display: block;
     }
 
-    .btn {
-      background: linear-gradient(135deg, var(--accent-purple), #6d28d9);
-      color: #fff;
-      border: none;
-      padding: 0.85rem 1.75rem;
-      font-size: 1rem;
-      font-weight: 600;
-      border-radius: 0.75rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      margin-top: 1.5rem;
-      width: 100%;
-      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+    /* Scanning Laser Overlay */
+    .scan-laser {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--accent-cyan), var(--accent-pink), transparent);
+      box-shadow: 0 0 15px var(--accent-cyan), 0 0 25px var(--accent-pink);
+      display: none;
+      animation: scanAnim 2s ease-in-out infinite alternate;
+      z-index: 10;
     }
 
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+    @keyframes scanAnim {
+      0% { top: 0%; }
+      100% { top: 96%; }
     }
 
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .result-section {
+    .ocr-loader-container {
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem 1rem;
       gap: 1.25rem;
-      height: 100%;
-    }
-
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.75rem;
-    }
-
-    .metric-box {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid var(--card-border);
-      border-radius: 0.75rem;
-      padding: 0.75rem;
       text-align: center;
     }
 
-    .metric-value {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--accent-cyan);
-    }
-
-    .metric-label {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .output-box {
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid var(--card-border);
-      border-radius: 0.75rem;
-      padding: 1.25rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
-      color: #e2e8f0;
-      white-space: pre-wrap;
-      overflow-y: auto;
-      min-height: 200px;
-      max-height: 350px;
-      flex-grow: 1;
-    }
-
-    .structured-tags {
+    .pulse-ring {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(139, 92, 246, 0.15);
+      border: 3px solid var(--accent-cyan);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+      align-items: center;
+      justify-content: center;
+      animation: pulseGlow 1.5s ease-in-out infinite alternate;
     }
 
-    .tag {
-      background: rgba(139, 92, 246, 0.2);
-      border: 1px solid rgba(139, 92, 246, 0.4);
-      color: #ddd6fe;
-      padding: 0.35rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.8rem;
+    @keyframes pulseGlow {
+      0% { transform: scale(0.95); box-shadow: 0 0 10px rgba(6, 182, 212, 0.4); }
+      100% { transform: scale(1.1); box-shadow: 0 0 25px rgba(236, 72, 153, 0.7); }
     }
 
     .loading-spinner {
       display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(255, 255, 255, 0.2);
       border-radius: 50%;
-      border-top-color: #fff;
-      animation: spin 1s ease-in-out infinite;
+      border-top-color: var(--accent-cyan);
+      animation: spin 0.8s linear infinite;
     }
 
     @keyframes spin {
@@ -278,10 +235,11 @@
       </div>
 
       <div class="preview-container" id="previewContainer">
+        <div class="scan-laser" id="scanLaser"></div>
         <img id="imagePreview" src="" alt="Selected Preview">
       </div>
 
-      <button class="btn" id="extractBtn" disabled>Extract Data</button>
+      <button class="btn" id="extractBtn" style="background: linear-gradient(135deg, var(--accent-purple), #6d28d9); color: #fff; border: none; padding: 0.85rem 1.75rem; font-size: 1rem; font-weight: 600; border-radius: 0.75rem; cursor: pointer; transition: all 0.3s ease; margin-top: 1.5rem; width: 100%; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);" disabled>Extract Data</button>
     </div>
 
     <!-- Results Section -->
@@ -371,12 +329,32 @@
       reader.readAsDataURL(file);
     }
 
+    const scanLaser = document.getElementById('scanLaser');
+
     extractBtn.addEventListener('click', async () => {
       if (!selectedFile) return;
 
       extractBtn.disabled = true;
-      extractBtn.innerHTML = '<span class="loading-spinner"></span> Extracting...';
-      outputBox.innerText = 'Processing image... Please wait...';
+      extractBtn.innerHTML = '<span class="loading-spinner"></span> Processing...';
+      
+      // Activate laser scanner
+      if (scanLaser) scanLaser.style.display = 'block';
+
+      // Animated loading state
+      outputBox.innerHTML = `
+        <div class="ocr-loader-container">
+          <div class="pulse-ring">
+            <span class="loading-spinner"></span>
+          </div>
+          <div style="font-weight: 600; color: var(--accent-cyan);" id="statusText">🔍 Scanning Image & Enhancing Contrast...</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Executing RapidOCR ONNX Recognition Engine</div>
+        </div>
+      `;
+
+      const statusText = document.getElementById('statusText');
+      const statusTimer = setTimeout(() => {
+        if (statusText) statusText.innerText = '🤖 Extracting Text & Bounding Boxes...';
+      }, 1200);
 
       const formData = new FormData();
       formData.append('file', selectedFile);
@@ -386,6 +364,12 @@
           method: 'POST',
           body: formData
         });
+
+        clearTimeout(statusTimer);
+
+        if (!response.ok) {
+          throw new Error(`Server returned HTTP ${response.status} (${response.statusText})`);
+        }
 
         const data = await response.json();
 
@@ -397,7 +381,7 @@
 
           // Render entity tags & document classification
           tagsContainer.innerHTML = '';
-          const { emails, phones, urls, document_fields } = data.structured_data;
+          const { emails, phones, urls, document_fields } = data.structured_data || {};
 
           const docCategory = data.document_classification ? data.document_classification.category : '18. Miscellaneous';
           const docType = data.document_classification ? data.document_classification.document_type : 'Unknown Document';
@@ -419,9 +403,9 @@
           }
 
           const allTags = [
-            ...emails.map(e => `📧 ${e}`),
-            ...phones.map(p => `📞 ${p}`),
-            ...urls.map(u => `🔗 ${u}`)
+            ...(emails || []).map(e => `📧 ${e}`),
+            ...(phones || []).map(p => `📞 ${p}`),
+            ...(urls || []).map(u => `🔗 ${u}`)
           ];
 
           allTags.forEach(text => {
@@ -435,8 +419,9 @@
           outputBox.innerText = `Error: ${data.error || 'Failed to process image.'}`;
         }
       } catch (err) {
-        outputBox.innerText = `Network or Server Error: ${err.message}`;
+        outputBox.innerHTML = `<span style="color: #ef4444; font-weight: 600;">⚠️ Connection / Server Error:</span>\n${err.message}\n\n💡 Tip: The server worker may have restarted. Please click "Extract Data" again to retry!`;
       } finally {
+        if (scanLaser) scanLaser.style.display = 'none';
         extractBtn.disabled = false;
         extractBtn.innerText = 'Extract Data';
       }
