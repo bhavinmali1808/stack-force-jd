@@ -14,7 +14,7 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <Link to={company ? '/dashboard' : '/'} className="navbar-brand">
-        Stack<span>Force</span> JD
+        Talent<span>Force</span> JD
       </Link>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

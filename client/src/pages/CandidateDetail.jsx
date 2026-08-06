@@ -8,7 +8,7 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
   const navigate = useNavigate();
   const roleId = roleIdProp || roleIdParam;
   const targetCid = candidateId || cid;
-  
+
   const [candidate, setCandidate] = useState(initialCandidate || null);
   const [role, setRole] = useState(initialCandidate?.role && typeof initialCandidate.role === 'object' ? initialCandidate.role : null);
   const [loading, setLoading] = useState(!initialCandidate);
@@ -82,7 +82,7 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
   return (
     <div className={onClose ? '' : 'page'} style={{ background: '#FAFBFD', minHeight: '100%', height: onClose ? '100%' : 'auto', paddingTop: onClose ? '1rem' : '2rem', overflowY: 'auto' }}>
       <div className="container" style={{ maxWidth: 1000, margin: '0 auto', padding: onClose ? '0 1.5rem' : undefined }}>
-        
+
         {/* Header Navigation */}
         <button onClick={() => onClose ? onClose() : navigate(-1)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#6B7280', marginBottom: '1.5rem', padding: 0 }}>
           <ArrowLeft size={18} /> {onClose ? 'Close' : 'Back'}
@@ -105,7 +105,7 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
               <p style={{ fontSize: '0.85rem', color: '#6B7280', margin: 0, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                 <MapPin size={14} /> {locationStr}
               </p>
-              
+
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
                 <span className="badge" style={{ background: '#EDE9FE', color: '#6D28D9', fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>⚡ Rule-Based Match</span>
                 {candidate.matchScore >= 80 && (
@@ -115,7 +115,7 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
                   <span className="badge" style={{ background: '#FEE2E2', color: '#991B1B', fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>⚠ Missing Must-Haves</span>
                 )}
               </div>
-              
+
               <div style={{ marginTop: '1rem', width: '250px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.8rem', fontWeight: 600 }}>
                   <span style={{ color: '#4B5563' }}>Match Score</span>
@@ -124,9 +124,9 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
                   </span>
                 </div>
                 <div style={{ width: '100%', height: '6px', background: '#E5E7EB', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ 
-                    height: '100%', 
-                    width: `${candidate.matchScore}%`, 
+                  <div style={{
+                    height: '100%',
+                    width: `${candidate.matchScore}%`,
                     background: candidate.matchScore >= 80 ? '#10B981' : candidate.matchScore >= 50 ? '#F59E0B' : '#EF4444',
                     transition: 'width 1s ease-in-out'
                   }} />
@@ -134,7 +134,7 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
               </div>
             </div>
           </div>
-          
+
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             <a href={candidate.linkedinUrl || '#'} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-icon" title="View LinkedIn" style={{ padding: '0.5rem' }}>
               <ExternalLink size={18} />
@@ -148,8 +148,8 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
             <button onClick={() => navigate('/email')} className="btn" style={{ background: '#F3F4F6', color: '#4F46E5', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
               <Send size={16} /> Start Outreach
             </button>
-            <button 
-              className="btn btn-primary" 
+            <button
+              className="btn btn-primary"
               style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: candidate.status === 'Shortlisted' ? '#10B981' : '#4F46E5' }}
               onClick={() => handleStatusChange(candidate.status === 'Shortlisted' ? 'Applied' : 'Shortlisted')}
               disabled={savingStatus}
@@ -162,10 +162,10 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
         {/* Tabs Navigation */}
         <div style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid #E5E7EB', marginBottom: '1.5rem' }}>
           {['Overview', 'Experience', 'Education'].map(tab => (
-            <button 
+            <button
               key={tab}
-              style={{ 
-                padding: '0.75rem 0', background: 'none', border: 'none', 
+              style={{
+                padding: '0.75rem 0', background: 'none', border: 'none',
                 borderBottom: activeTab === tab ? '2px solid #4F46E5' : '2px solid transparent',
                 color: activeTab === tab ? '#4F46E5' : '#6B7280',
                 fontWeight: activeTab === tab ? 600 : 500,
@@ -180,7 +180,7 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
 
         {/* Tab Content */}
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #E5E7EB', padding: '1.5rem' }}>
-          
+
           {activeTab === 'Overview' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               {/* Contact Information */}
@@ -270,7 +270,7 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
                   </p>
                 )}
                 <p style={{ marginTop: '0.75rem', marginBottom: 0, fontSize: '0.82rem', color: '#6B7280' }}>
-                  Scored by StackForce rule-based engine · Must-haves 60% · Nice-to-haves 40%
+                  Scored by TalentForce rule-based engine · Must-haves 60% · Nice-to-haves 40%
                 </p>
               </div>
             </div>
@@ -290,10 +290,10 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
                   <p style={{ fontSize: '0.85rem', color: '#6B7280', margin: 0 }}>Average Tenure</p>
                 </div>
               </div>
-              
+
               <div>
                 <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', marginBottom: '1.5rem' }}>Experience History</h3>
-                
+
                 {/* Simulated Timeline for MVP */}
                 <div style={{ position: 'relative', paddingLeft: '1.5rem', borderLeft: '2px solid #E5E7EB', marginLeft: '1rem' }}>
                   <div style={{ position: 'absolute', width: 12, height: 12, background: '#10B981', borderRadius: '50%', left: -7, top: 4, border: '2px solid #fff' }} />
@@ -310,7 +310,7 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
                     As a key contributor, I played a pivotal role in developing, optimizing, and launching multiple projects...
                   </p>
                 </div>
-                
+
               </div>
             </div>
           )}

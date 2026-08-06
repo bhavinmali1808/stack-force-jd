@@ -247,7 +247,7 @@ router.post('/send', ...auth, async (req, res) => {
       });
     }
 
-    const senderCtx = { company: req.user.name || 'StackForce', recruiterName: req.user.name || 'Hiring Team' };
+    const senderCtx = { company: req.user.name || 'TalentForce', recruiterName: req.user.name || 'Hiring Team' };
     const normalizedRecipients = recipients.map((r) =>
       typeof r === 'string' ? { email: r } : r
     );
@@ -413,7 +413,7 @@ router.post('/campaigns', ...auth, async (req, res) => {
       recipientCount: recipients.length,
     });
 
-    const senderCtx = { company: req.user.name || 'StackForce', recruiterName: req.user.name || 'Hiring Team' };
+    const senderCtx = { company: req.user.name || 'TalentForce', recruiterName: req.user.name || 'Hiring Team' };
     const { results, successCount, failedCount } = await sendBulk(
       recipients,
       { subject, bodyHtml, category },
@@ -606,7 +606,7 @@ router.get('/unsubscribe', async (req, res) => {
       </head><body>
       <h1>✅ You have been unsubscribed</h1>
       <p>You will no longer receive marketing emails from us.</p>
-      <a href="https://resuming.io">Return to StackForce</a>
+      <a href="https://resuming.io">Return to TalentForce</a>
       </body></html>
     `);
   } catch (err) {

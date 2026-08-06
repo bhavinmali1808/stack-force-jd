@@ -168,7 +168,7 @@ const wrapInEmailLayout = (content, { previewText = '', unsubscribeUrl = '#' } =
       ${content}
     </div>
     <div class="email-footer">
-      <p>© ${new Date().getFullYear()} StackForce · Powering India's hiring ecosystem</p>
+      <p>© ${new Date().getFullYear()} TalentForce · Powering India's hiring ecosystem</p>
       <p>
         <a href="${unsubscribeUrl}">Unsubscribe</a> · 
         <a href="https://resuming.io/privacy">Privacy Policy</a>
@@ -186,7 +186,7 @@ const SYSTEM_TEMPLATES = {
    * OTP / Password Reset
    * vars: { name, otp, expiryMinutes, company }
    */
-  otp: ({ name, otp, expiryMinutes = 10, company = 'StackForce' }) => ({
+  otp: ({ name, otp, expiryMinutes = 10, company = 'TalentForce' }) => ({
     subject: `${otp} is your verification code — ${company}`,
     previewText: `Your one-time password is ${otp}`,
     html: wrapInEmailLayout(`
@@ -209,7 +209,7 @@ const SYSTEM_TEMPLATES = {
    * Welcome email for new users
    * vars: { name, company, loginUrl, role }
    */
-  welcome: ({ name, company = 'StackForce', loginUrl = 'https://resuming.io/login', role = 'recruiter' }) => ({
+  welcome: ({ name, company = 'TalentForce', loginUrl = 'https://resuming.io/login', role = 'recruiter' }) => ({
     subject: `Welcome to ${company} — Your account is ready 🎉`,
     previewText: `You're now part of the ${company} hiring ecosystem`,
     html: wrapInEmailLayout(`
@@ -316,7 +316,7 @@ const generateUnsubscribeToken = (email, secret = process.env.JWT_SECRET || 'def
 const sendEmail = async (options) => {
   const transporter = getTransporter();
 
-  const fromName = process.env.FROM_NAME || 'StackForce';
+  const fromName = process.env.FROM_NAME || 'TalentForce';
   const fromEmail = process.env.FROM_EMAIL || 'noreply@resuming.io';
 
   const mailOptions = {
@@ -328,7 +328,7 @@ const sendEmail = async (options) => {
     replyTo: options.replyTo || process.env.REPLY_TO_EMAIL || fromEmail,
     headers: {
       'X-Category': options.category || 'general',
-      'X-Mailer': 'StackForce EmailService v2',
+      'X-Mailer': 'TalentForce EmailService v2',
       'List-Unsubscribe': `<mailto:unsubscribe@resuming.io?subject=unsubscribe>`,
     },
   };
