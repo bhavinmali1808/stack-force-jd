@@ -162,14 +162,22 @@ router.post('/:id/test', protect, async (req, res) => {
 
 // POST /api/campaigns/:id/pause
 router.post('/:id/pause', protect, notViewer, async (req, res) => {
-  await emailQueue.pause();
+  try {
+    await emailQueue.pause();
+  } catch (err) {
+    console.warn('[Queue Pause Error]:', err.message);
+  }
   await Campaign.findByIdAndUpdate(req.params.id, { status: 'paused' });
-  res.json({ success: true, message: 'Campaign paused (queue paused)' });
+  res.json({ success: true, message: 'Campaign paused' });
 });
 
 // POST /api/campaigns/:id/resume
 router.post('/:id/resume', protect, notViewer, async (req, res) => {
-  await emailQueue.resume();
+  try {
+    await emailQueue.resume();
+  } catch (err) {
+    console.warn('[Queue Resume Error]:', err.message);
+  }
   await Campaign.findByIdAndUpdate(req.params.id, { status: 'sending' });
   res.json({ success: true, message: 'Campaign resumed' });
 });

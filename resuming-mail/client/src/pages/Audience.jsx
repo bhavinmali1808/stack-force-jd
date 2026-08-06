@@ -73,14 +73,58 @@ export default function Audience() {
     catch { toast.error('Failed to remove'); }
   };
 
+  // Export Contacts
+  const handleExport = async () => {
+    try {
+      const res = await api.get(`/audience/export?search=${encodeURIComponent(search)}&plan=${encodeURIComponent(planFilter)}`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `audience_contacts_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Contacts exported successfully');
+    } catch {
+      // Fallback: Client-side CSV Export from loaded contacts
+      if (contacts.length === 0) {
+        return toast.error('No contacts available to export');
+      }
+      let csv = 'Email,First Name,Last Name,Plan,Verified,Resume Title,Joined Date\n';
+      contacts.forEach(c => {
+        const email = `"${(c.email || '').replace(/"/g, '""')}"`;
+        const fn = `"${(c.firstName || '').replace(/"/g, '""')}"`;
+        const ln = `"${(c.lastName || '').replace(/"/g, '""')}"`;
+        const planStr = `"${c.plan || 'free'}"`;
+        const ver = c.isVerified ? 'Yes' : 'No';
+        const title = `"${(c.resumeTitle || '').replace(/"/g, '""')}"`;
+        const date = `"${new Date(c.joinedAt || c.createdAt || Date.now()).toLocaleDateString()}"`;
+        csv += `${email},${fn},${ln},${planStr},${ver},${title},${date}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `audience_contacts_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('Exported contacts CSV');
+    }
+  };
+
   // Add Single Contact
   const handleAddContactSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.email) return toast.error('Email is required');
+    if (!formData.email || !formData.email.trim()) return toast.error('Email is required');
     setSubmitting(true);
     try {
       const payload = {
         ...formData,
+        email: formData.email.trim().toLowerCase(),
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : []
       };
       const res = await api.post('/audience', payload);
@@ -109,7 +153,11 @@ export default function Audience() {
       try {
         const json = JSON.parse(raw);
         if (Array.isArray(json)) {
-          const list = json.map(item => typeof item === 'string' ? { email: item.trim() } : item).filter(c => c && c.email);
+          const list = json.map(item => {
+            if (typeof item === 'string') return { email: item.trim().toLowerCase() };
+            if (item && item.email) return { ...item, email: String(item.email).trim().toLowerCase() };
+            return null;
+          }).filter(Boolean);
           setParsedPreview(list);
           return;
         }
@@ -123,23 +171,35 @@ export default function Audience() {
       return;
     }
 
-    // Check header
-    const firstLine = lines[0].toLowerCase();
-    const hasHeader = firstLine.includes('email');
-    const dataLines = hasHeader ? lines.slice(1) : lines;
+    // Header inspection
+    const firstLineParts = lines[0].split(',').map(p => p.trim().toLowerCase().replace(/^["']|["']$/g, ''));
+    const hasHeader = firstLineParts.some(p => p.includes('email'));
+    
+    let emailIdx = 0, fnIdx = 1, lnIdx = 2, planIdx = 3;
+    if (hasHeader) {
+      firstLineParts.forEach((header, idx) => {
+        if (header.includes('email')) emailIdx = idx;
+        else if (header.includes('first') || header.includes('fname')) fnIdx = idx;
+        else if (header.includes('last') || header.includes('lname')) lnIdx = idx;
+        else if (header.includes('plan')) planIdx = idx;
+      });
+    }
 
+    const dataLines = hasHeader ? lines.slice(1) : lines;
     const list = [];
+    const validPlans = ['free', 'trial', 'premium', 'enterprise'];
+
     for (let line of dataLines) {
       const parts = line.split(',').map(p => p.trim().replace(/^["']|["']$/g, ''));
-      if (!parts[0] || !parts[0].includes('@')) continue;
-      
-      if (parts.length >= 3) {
-        list.push({ email: parts[0], firstName: parts[1], lastName: parts[2], plan: parts[3] || 'free' });
-      } else if (parts.length === 2) {
-        list.push({ email: parts[0], firstName: parts[1], plan: 'free' });
-      } else {
-        list.push({ email: parts[0], plan: 'free' });
-      }
+      const email = (parts[emailIdx] || parts[0] || '').toLowerCase().trim();
+      if (!email || !email.includes('@')) continue;
+
+      const firstName = parts[fnIdx] || parts[1] || '';
+      const lastName  = parts[lnIdx] || parts[2] || '';
+      const rawPlan   = (parts[planIdx] || parts[3] || 'free').toLowerCase();
+      const plan      = validPlans.includes(rawPlan) ? rawPlan : 'free';
+
+      list.push({ email, firstName, lastName, plan });
     }
     setParsedPreview(list);
   };
@@ -165,7 +225,7 @@ export default function Audience() {
     try {
       const res = await api.post('/audience/import', { contacts: parsedPreview });
       if (res.data.success) {
-        toast.success(`Successfully imported/updated ${parsedPreview.length} contacts!`);
+        toast.success(`Successfully imported/updated ${res.data.upserted || res.data.total || parsedPreview.length} contacts!`);
         setShowImportModal(false);
         setImportText('');
         setImportFile(null);
@@ -235,8 +295,8 @@ export default function Audience() {
           <option value="trial">Trial</option>
           <option value="premium">Premium</option>
         </select>
-        <button className="btn-ghost"><Filter size={13} /> Filter</button>
-        <button className="btn-ghost"><Download size={13} /> Export</button>
+        <button className="btn-ghost" onClick={fetchContacts}><Filter size={13} /> Filter</button>
+        <button className="btn-ghost" onClick={handleExport}><Download size={13} /> Export</button>
       </div>
 
       {/* Table */}
@@ -469,4 +529,5 @@ export default function Audience() {
     </div>
   );
 }
+
 

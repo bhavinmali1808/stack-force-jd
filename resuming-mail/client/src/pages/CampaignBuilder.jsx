@@ -220,6 +220,8 @@ export default function CampaignBuilder() {
                   <select className="select" value={form.senderEmail} onChange={e => set('senderEmail', e.target.value)}>
                     <option value="no-reply@resuming.io">no-reply@resuming.io</option>
                     <option value="teams@resuming.io">teams@resuming.io</option>
+                    <option value="support@resuming.io">support@resuming.io</option>
+                    <option value="hr@resuming.io">hr@resuming.io</option>
                   </select>
                 </Field>
               </div>
