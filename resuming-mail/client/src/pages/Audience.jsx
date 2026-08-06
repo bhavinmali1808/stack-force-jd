@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Trash2, ChevronDown, Download, Filter, UserPlus } from 'lucide-react';
+import { Users, Search, Trash2, ChevronDown, Download, Filter, UserPlus, Plus, Upload, X, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import api from '../api';
 import toast from 'react-hot-toast';
 
@@ -31,6 +31,28 @@ export default function Audience() {
   const [search, setSearch]         = useState('');
   const [planFilter, setPlanFilter] = useState('');
 
+  // Modals
+  const [showAddModal, setShowAddModal]       = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+
+  // Single Contact Form State
+  const [formData, setFormData] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    plan: 'free',
+    isVerified: true,
+    resumeTitle: '',
+    tags: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  // Import State
+  const [importText, setImportText]     = useState('');
+  const [importFile, setImportFile]     = useState(null);
+  const [parsedPreview, setParsedPreview] = useState([]);
+  const [importing, setImporting]       = useState(false);
+
   const fetchContacts = async () => {
     try {
       const [cRes, sRes] = await Promise.all([
@@ -51,6 +73,112 @@ export default function Audience() {
     catch { toast.error('Failed to remove'); }
   };
 
+  // Add Single Contact
+  const handleAddContactSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.email) return toast.error('Email is required');
+    setSubmitting(true);
+    try {
+      const payload = {
+        ...formData,
+        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : []
+      };
+      const res = await api.post('/audience', payload);
+      if (res.data.success) {
+        toast.success('Contact added successfully!');
+        setShowAddModal(false);
+        setFormData({ email: '', firstName: '', lastName: '', plan: 'free', isVerified: true, resumeTitle: '', tags: '' });
+        fetchContacts();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to add contact');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Parse CSV/Text/JSON for Import
+  const parseRawInput = (text) => {
+    const raw = text.trim();
+    if (!raw) {
+      setParsedPreview([]);
+      return;
+    }
+    // Try JSON array first
+    if (raw.startsWith('[') && raw.endsWith(']')) {
+      try {
+        const json = JSON.parse(raw);
+        if (Array.isArray(json)) {
+          const list = json.map(item => typeof item === 'string' ? { email: item.trim() } : item).filter(c => c && c.email);
+          setParsedPreview(list);
+          return;
+        }
+      } catch { /* ignore and fallback to CSV/lines */ }
+    }
+
+    // CSV or line-by-line fallback
+    const lines = raw.split(/\r?\n/).filter(line => line.trim());
+    if (lines.length === 0) {
+      setParsedPreview([]);
+      return;
+    }
+
+    // Check header
+    const firstLine = lines[0].toLowerCase();
+    const hasHeader = firstLine.includes('email');
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+
+    const list = [];
+    for (let line of dataLines) {
+      const parts = line.split(',').map(p => p.trim().replace(/^["']|["']$/g, ''));
+      if (!parts[0] || !parts[0].includes('@')) continue;
+      
+      if (parts.length >= 3) {
+        list.push({ email: parts[0], firstName: parts[1], lastName: parts[2], plan: parts[3] || 'free' });
+      } else if (parts.length === 2) {
+        list.push({ email: parts[0], firstName: parts[1], plan: 'free' });
+      } else {
+        list.push({ email: parts[0], plan: 'free' });
+      }
+    }
+    setParsedPreview(list);
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImportFile(file);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const content = evt.target.result;
+      setImportText(content);
+      parseRawInput(content);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImportSubmit = async () => {
+    if (parsedPreview.length === 0) {
+      return toast.error('No valid contacts found to import');
+    }
+    setImporting(true);
+    try {
+      const res = await api.post('/audience/import', { contacts: parsedPreview });
+      if (res.data.success) {
+        toast.success(`Successfully imported/updated ${parsedPreview.length} contacts!`);
+        setShowImportModal(false);
+        setImportText('');
+        setImportFile(null);
+        setParsedPreview([]);
+        fetchContacts();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Bulk import failed');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div>
       {/* Header */}
@@ -59,7 +187,14 @@ export default function Audience() {
           <h1 className="page-title">Audience</h1>
           <p className="page-subtitle">Manage and segment your subscriber list from Resuming.io</p>
         </div>
-        <button className="btn-primary"><UserPlus size={14} /> Import Contacts</button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className="btn-secondary" onClick={() => setShowAddModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Plus size={14} /> Add Contact
+          </button>
+          <button className="btn-primary" onClick={() => setShowImportModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <UserPlus size={14} /> Import Contacts
+          </button>
+        </div>
       </div>
 
       {/* Stat summary row */}
@@ -140,9 +275,9 @@ export default function Audience() {
                   <tr key={c._id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <Avatar name={`${c.firstName} ${c.lastName}`} email={c.email} />
+                        <Avatar name={`${c.firstName || ''} ${c.lastName || ''}`} email={c.email} />
                         <div>
-                          <div style={{ fontWeight: 600, color: 'var(--text-1)', fontSize: '0.8125rem' }}>{c.firstName} {c.lastName}</div>
+                          <div style={{ fontWeight: 600, color: 'var(--text-1)', fontSize: '0.8125rem' }}>{c.firstName || '—'} {c.lastName || ''}</div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{c.email}</div>
                         </div>
                       </div>
@@ -172,6 +307,166 @@ export default function Audience() {
           </tbody>
         </table>
       </div>
+
+      {/* Single Add Contact Modal */}
+      {showAddModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+        }}>
+          <div className="card" style={{ width: '100%', maxWidth: '480px', padding: '1.5rem', background: '#fff', borderRadius: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h2 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0 }}>Add New Contact</h2>
+              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)' }}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '0.25rem' }}>Email Address *</label>
+                <input
+                  type="email"
+                  required
+                  className="input"
+                  placeholder="e.g. alex@example.com"
+                  value={formData.email}
+                  onChange={e => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '0.25rem' }}>First Name</label>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Alex"
+                    value={formData.firstName}
+                    onChange={e => setFormData({ ...formData, firstName: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '0.25rem' }}>Last Name</label>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Morgan"
+                    value={formData.lastName}
+                    onChange={e => setFormData({ ...formData, lastName: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '0.25rem' }}>Plan Tier</label>
+                  <select
+                    className="select"
+                    style={{ width: '100%' }}
+                    value={formData.plan}
+                    onChange={e => setFormData({ ...formData, plan: e.target.value })}
+                  >
+                    <option value="free">Free</option>
+                    <option value="trial">Trial</option>
+                    <option value="premium">Premium</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '0.25rem' }}>Resume Title</label>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Senior Developer"
+                    value={formData.resumeTitle}
+                    onChange={e => setFormData({ ...formData, resumeTitle: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '0.25rem' }}>Tags (comma-separated)</label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="newsletter, developer, lead"
+                  value={formData.tags}
+                  onChange={e => setFormData({ ...formData, tags: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
+                <button type="submit" className="btn-primary" disabled={submitting}>
+                  {submitting ? 'Saving...' : 'Save Contact'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Import Modal */}
+      {showImportModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+        }}>
+          <div className="card" style={{ width: '100%', maxWidth: '580px', padding: '1.5rem', background: '#fff', borderRadius: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0 }}>Import Audience Contacts</h2>
+              <button onClick={() => setShowImportModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-2)', marginBottom: '1rem' }}>
+              Upload a <strong>CSV file</strong>, or paste <strong>raw emails/CSV lines</strong> (Format: <code>email, firstName, lastName, plan</code>).
+            </p>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                <Upload size={14} /> Choose CSV/JSON File
+                <input type="file" accept=".csv, .txt, .json" onChange={handleFileUpload} style={{ display: 'none' }} />
+              </label>
+              {importFile && <span style={{ marginLeft: '0.75rem', fontSize: '0.75rem', color: 'var(--purple)', fontWeight: 600 }}>{importFile.name}</span>}
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '0.25rem' }}>Paste Contacts Raw Text / JSON</label>
+              <textarea
+                className="input"
+                style={{ height: '110px', fontFamily: 'monospace', fontSize: '0.75rem', width: '100%' }}
+                placeholder={`john@example.com, John, Doe, premium\nsarah@example.com, Sarah, Connor, free\n...`}
+                value={importText}
+                onChange={e => {
+                  setImportText(e.target.value);
+                  parseRawInput(e.target.value);
+                }}
+              />
+            </div>
+
+            {/* Parsed Preview count */}
+            <div style={{
+              background: '#f9fafb', border: '1px solid var(--border)', borderRadius: '8px',
+              padding: '0.75rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}>
+                {parsedPreview.length > 0 ? <CheckCircle2 size={16} color="var(--green)" /> : <AlertCircle size={16} color="var(--amber)" />}
+                <span>Found <strong>{parsedPreview.length}</strong> valid contacts ready to import</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+              <button type="button" className="btn-secondary" onClick={() => setShowImportModal(false)}>Cancel</button>
+              <button type="button" className="btn-primary" disabled={importing || parsedPreview.length === 0} onClick={handleImportSubmit}>
+                {importing ? 'Importing...' : `Import ${parsedPreview.length} Contacts`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
