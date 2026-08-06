@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GitBranch, Plus, Users, Trash2, Target } from 'lucide-react';
+import { GitBranch, Plus, Users, Trash2, Target, X, CheckCircle2 } from 'lucide-react';
 import api from '../api';
 import toast from 'react-hot-toast';
 
@@ -14,6 +14,19 @@ const SEG_COLORS = [
 export default function Segments() {
   const [segments, setSegments] = useState([]);
   const [loading, setLoading]   = useState(true);
+
+  // Create Segment Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    rules: {
+      plan: '',
+      isVerified: '',
+      hasResume: '',
+    }
+  });
 
   const fetchSegments = async () => {
     try {
@@ -31,6 +44,35 @@ export default function Segments() {
     catch { toast.error('Failed to delete'); }
   };
 
+  const handleCreateSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.name.trim()) return toast.error('Segment name is required');
+    setSubmitting(true);
+    try {
+      const rulesPayload = {};
+      if (formData.rules.plan) rulesPayload.plan = formData.rules.plan;
+      if (formData.rules.isVerified !== '') rulesPayload.isVerified = formData.rules.isVerified === 'true';
+      if (formData.rules.hasResume !== '') rulesPayload.hasResume = formData.rules.hasResume === 'true';
+
+      const res = await api.post('/segments', {
+        name: formData.name,
+        description: formData.description,
+        rules: rulesPayload,
+      });
+
+      if (res.data.success) {
+        toast.success('Dynamic Segment created!');
+        setShowModal(false);
+        setFormData({ name: '', description: '', rules: { plan: '', isVerified: '', hasResume: '' } });
+        fetchSegments();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to create segment');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
@@ -38,6 +80,9 @@ export default function Segments() {
           <h1 className="page-title">Segments</h1>
           <p className="page-subtitle">Dynamic audience rules for hyper-targeted delivery</p>
         </div>
+        <button className="btn-primary" onClick={() => setShowModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Plus size={14} /> Create Segment
+        </button>
       </div>
 
       {/* Built-in segments grid */}
@@ -94,9 +139,12 @@ export default function Segments() {
           }}>
             <div style={{ fontSize: '2rem', marginBottom: '0.875rem' }}>🎯</div>
             <div style={{ fontWeight: 600, color: 'var(--text-1)', marginBottom: '0.4rem' }}>No custom segments yet</div>
-            <div style={{ fontSize: '0.8125rem', color: 'var(--text-3)' }}>
-              Campaigns currently use the built-in audience segments above.
+            <div style={{ fontSize: '0.8125rem', color: 'var(--text-3)', marginBottom: '1.25rem' }}>
+              Create a targeted audience segment based on plan, verification status, or tags.
             </div>
+            <button className="btn-primary" onClick={() => setShowModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Plus size={14} /> Create First Segment
+            </button>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.875rem' }}>
@@ -125,6 +173,105 @@ export default function Segments() {
           </div>
         )}
       </div>
+
+      {/* Create Segment Modal */}
+      {showModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+        }}>
+          <div className="card" style={{ width: '100%', maxWidth: '500px', padding: '1.5rem', background: '#fff', borderRadius: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h2 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0 }}>Create Custom Segment</h2>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '0.25rem' }}>Segment Name *</label>
+                <input
+                  type="text"
+                  required
+                  className="input"
+                  placeholder="e.g. Active Premium Developers"
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '0.25rem' }}>Description</label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="Target users who match specific subscription rules"
+                  value={formData.description}
+                  onChange={e => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+
+              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-1)', marginBottom: '0.75rem' }}>Filter Rules (Criteria)</div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-3)', display: 'block', marginBottom: '0.2rem' }}>Plan Filter</label>
+                    <select
+                      className="select"
+                      style={{ width: '100%' }}
+                      value={formData.rules.plan}
+                      onChange={e => setFormData({ ...formData, rules: { ...formData.rules, plan: e.target.value } })}
+                    >
+                      <option value="">Any Plan</option>
+                      <option value="free">Free Tier</option>
+                      <option value="trial">Trial</option>
+                      <option value="premium">Premium Tier</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-3)', display: 'block', marginBottom: '0.2rem' }}>Verified Email</label>
+                    <select
+                      className="select"
+                      style={{ width: '100%' }}
+                      value={formData.rules.isVerified}
+                      onChange={e => setFormData({ ...formData, rules: { ...formData.rules, isVerified: e.target.value } })}
+                    >
+                      <option value="">Any Status</option>
+                      <option value="true">Verified Only</option>
+                      <option value="false">Unverified Only</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '0.75rem' }}>
+                  <label style={{ fontSize: '0.75rem', color: 'var(--text-3)', display: 'block', marginBottom: '0.2rem' }}>Has Resume Uploaded</label>
+                  <select
+                    className="select"
+                    style={{ width: '100%' }}
+                    value={formData.rules.hasResume}
+                    onChange={e => setFormData({ ...formData, rules: { ...formData.rules, hasResume: e.target.value } })}
+                  >
+                    <option value="">Any</option>
+                    <option value="true">Yes (Resume Attached)</option>
+                    <option value="false">No (No Resume)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                <button type="submit" className="btn-primary" disabled={submitting}>
+                  {submitting ? 'Creating...' : 'Save Segment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
