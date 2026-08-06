@@ -11,12 +11,13 @@ import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 
 const NAV = [
-  { to: '/',            icon: LayoutDashboard, label: 'Overview'    },
-  { to: '/campaigns',   icon: Send,            label: 'Campaigns'   },
-  { to: '/templates',   icon: FileText,        label: 'Templates'   },
-  { to: '/audience',    icon: Users,           label: 'Audience'    },
-  { to: '/segments',    icon: GitBranch,       label: 'Segments'    },
-  { to: '/analytics',   icon: BarChart2,       label: 'Analytics'   },
+  { to: '/',              icon: LayoutDashboard, label: 'Overview'       },
+  { to: '/campaigns',     icon: Send,            label: 'Campaigns'      },
+  { to: '/templates',     icon: FileText,        label: 'Templates'      },
+  { to: '/audience',      icon: Users,           label: 'Audience'       },
+  { to: '/segments',      icon: GitBranch,       label: 'Segments'       },
+  { to: '/analytics',     icon: BarChart2,       label: 'Analytics'      },
+  { to: '/deliverability',icon: Cpu,             label: 'Deliverability' },
 ];
 
 const NAV_BOTTOM = [

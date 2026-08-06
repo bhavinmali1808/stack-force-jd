@@ -16,6 +16,7 @@ import Queue from './pages/Queue';
 import Logs from './pages/Logs';
 import Suppression from './pages/Suppression';
 import SmtpHealth from './pages/SmtpHealth';
+import Deliverability from './pages/Deliverability';
 import './index.css';
 
 const ProtectedRoute = ({ children }) => {
@@ -65,6 +66,7 @@ export default function App() {
           <Route path="audience" element={<Audience />} />
           <Route path="segments" element={<Segments />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="deliverability" element={<Deliverability />} />
           <Route path="queue" element={<Queue />} />
           <Route path="logs" element={<Logs />} />
           <Route path="suppression" element={<Suppression />} />

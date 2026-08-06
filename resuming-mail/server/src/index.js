@@ -17,15 +17,17 @@ const { verifySmtp } = require('./config/smtp');
 const Admin         = require('./models/Admin');
 
 // Routes
-const authRoutes      = require('./routes/auth');
-const campaignRoutes  = require('./routes/campaigns');
-const templateRoutes  = require('./routes/templates');
-const audienceRoutes  = require('./routes/audience');
-const segmentRoutes   = require('./routes/segments');
-const analyticsRoutes = require('./routes/analytics');
-const queueRoutes     = require('./routes/queue');
-const smtpRoutes      = require('./routes/smtp');
-const trackingRoutes  = require('./routes/tracking');
+const authRoutes           = require('./routes/auth');
+const campaignRoutes       = require('./routes/campaigns');
+const templateRoutes       = require('./routes/templates');
+const audienceRoutes       = require('./routes/audience');
+const segmentRoutes        = require('./routes/segments');
+const analyticsRoutes      = require('./routes/analytics');
+const queueRoutes          = require('./routes/queue');
+const smtpRoutes           = require('./routes/smtp');
+const trackingRoutes       = require('./routes/tracking');
+const dnsRoutes            = require('./routes/dns');
+const deliverabilityRoutes = require('./routes/deliverability');
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
@@ -66,15 +68,17 @@ app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 app.use('/api/', rateLimit({ windowMs: 60000, max: 200, standardHeaders: true, legacyHeaders: false }));
 
 // ── Routes ─────────────────────────────────────
-app.use('/api/auth',      authRoutes);
-app.use('/api/campaigns', campaignRoutes);
-app.use('/api/templates', templateRoutes);
-app.use('/api/audience',  audienceRoutes);
-app.use('/api/segments',  segmentRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/queue',     queueRoutes);
-app.use('/api/smtp',      smtpRoutes);
-app.use('/api/track',     trackingRoutes);  // open pixel + click redirect (no auth)
+app.use('/api/auth',           authRoutes);
+app.use('/api/campaigns',      campaignRoutes);
+app.use('/api/templates',      templateRoutes);
+app.use('/api/audience',       audienceRoutes);
+app.use('/api/segments',       segmentRoutes);
+app.use('/api/analytics',      analyticsRoutes);
+app.use('/api/queue',          queueRoutes);
+app.use('/api/smtp',           smtpRoutes);
+app.use('/api/track',          trackingRoutes);  // open pixel + click redirect (no auth)
+app.use('/api/dns',            dnsRoutes);
+app.use('/api/deliverability', deliverabilityRoutes);
 
 // Health
 app.get('/api/health', (req, res) => res.json({
