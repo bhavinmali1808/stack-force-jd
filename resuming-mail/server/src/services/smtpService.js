@@ -13,9 +13,10 @@ const { getTransport } = require('../config/smtp');
  */
 const sendEmail = async ({ to, toName, from, fromName, replyTo, subject, html, text, attachments = [] }) => {
   const transport = getTransport();
+  const senderAddress = from || process.env.FROM_EMAIL || 'no-reply@resuming.io';
 
   const info = await transport.sendMail({
-    from: `"${fromName || 'Resuming.io'}" <${from || process.env.FROM_EMAIL || 'noreply@resuming.io'}>`,
+    from: `"${fromName || 'Resuming.io'}" <${senderAddress}>`,
     to: toName ? `"${toName}" <${to}>` : to,
     replyTo: replyTo || undefined,
     subject,
