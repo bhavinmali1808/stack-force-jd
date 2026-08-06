@@ -114,6 +114,10 @@ if (IS_PRODUCTION && process.env.REDIS_URL) {
       tls: process.env.REDIS_URL.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
     });
     const subClient = pubClient.duplicate();
+
+    pubClient.on('error', (err) => console.error('🔴 [Socket.io Redis Pub Error]:', err.message));
+    subClient.on('error', (err) => console.error('🔴 [Socket.io Redis Sub Error]:', err.message));
+
     io.adapter(createAdapter(pubClient, subClient));
     console.log('🔴 [Socket.io] Redis adapter enabled (multi-instance ready)');
   } catch (err) {

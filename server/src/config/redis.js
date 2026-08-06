@@ -25,9 +25,12 @@ function getRedisClient() {
   });
 
   redisClient.on('connect', () => console.log('🔴 [Redis] Connected'));
-  redisClient.on('error', (err) => console.error('🔴 [Redis] Error:', err.message));
+  redisClient.on('error', (err) => {
+    console.error('🔴 [Redis] Connection Error:', err.message);
+  });
 
   return redisClient;
 }
 
 module.exports = { getRedisClient, IS_PRODUCTION };
+
